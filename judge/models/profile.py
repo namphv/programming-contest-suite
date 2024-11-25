@@ -242,28 +242,52 @@ class Profile(models.Model):
 
     _pp_table = [pow(settings.DMOJ_PP_STEP, i) for i in range(settings.DMOJ_PP_ENTRIES)]
 
-    def calculate_points(self, table=_pp_table):
+    # def calculate_points(self, table=_pp_table):
+    #     from judge.models import Problem
+    #     public_problems = Problem.get_public_problems()
+    #     data = (
+    #         public_problems.filter(submission__user=self, submission__points__isnull=False)
+    #                        .annotate(max_points=Max('submission__points')).order_by('-max_points')
+    #                        .values_list('max_points', flat=True).filter(max_points__gt=0)
+    #     )
+    #     bonus_function = settings.DMOJ_PP_BONUS_FUNCTION
+    #     points = sum(data)
+    #     problems = (
+    #         public_problems.filter(submission__user=self, submission__result='AC',
+    #                                submission__case_points__gte=F('submission__case_total'))
+    #         .values('id').distinct().count()
+    #     )
+    #     pp = sum(x * y for x, y in zip(table, data)) + bonus_function(problems)
+    #     if not float_compare_equal(self.points, points) or \
+    #        problems != self.problem_count or \
+    #        not float_compare_equal(self.performance_points, pp):
+    #         self.points = points
+    #         self.problem_count = problems
+    #         self.performance_points = pp
+    #         self.save(update_fields=['points', 'problem_count', 'performance_points'])
+    #         for org in self.organizations.get_queryset():
+    #             org.calculate_points()
+    #     return points
+    
+    def calculate_points(self):
         from judge.models import Problem
-        public_problems = Problem.get_public_problems()
+        public_problems = Problem.objects.all()
         data = (
-            public_problems.filter(submission__user=self, submission__points__isnull=False)
+            public_problems.filter(submission__user=self, submission__points__isnull=False, submission__result='AC')
                            .annotate(max_points=Max('submission__points')).order_by('-max_points')
                            .values_list('max_points', flat=True).filter(max_points__gt=0)
         )
-        bonus_function = settings.DMOJ_PP_BONUS_FUNCTION
         points = sum(data)
         problems = (
             public_problems.filter(submission__user=self, submission__result='AC',
                                    submission__case_points__gte=F('submission__case_total'))
             .values('id').distinct().count()
         )
-        pp = sum(x * y for x, y in zip(table, data)) + bonus_function(problems)
         if not float_compare_equal(self.points, points) or \
-           problems != self.problem_count or \
-           not float_compare_equal(self.performance_points, pp):
+           problems != self.problem_count:
             self.points = points
             self.problem_count = problems
-            self.performance_points = pp
+            self.performance_points = points
             self.save(update_fields=['points', 'problem_count', 'performance_points'])
             for org in self.organizations.get_queryset():
                 org.calculate_points()

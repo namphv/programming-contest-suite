@@ -401,6 +401,10 @@ class Problem(models.Model):
     @classmethod
     def get_public_problems(cls):
         return cls.objects.filter(is_public=True, is_organization_private=False).defer('description')
+    
+    @classmethod
+    def get_all_problems(cls):
+        return cls.objects.defer('description')
 
     @classmethod
     def get_editable_problems(cls, user):
