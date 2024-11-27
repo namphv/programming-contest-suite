@@ -44,7 +44,8 @@ from judge.tasks import on_new_contest, prepare_contest_data, run_moss
 from judge.utils.celery import redirect_to_task_status, task_status_by_id, task_status_url_by_id
 from judge.utils.cms import parse_csv_ranking
 from judge.utils.opengraph import generate_opengraph
-from judge.utils.problems import _get_result_data, user_attempted_ids, user_completed_ids
+from judge.utils.problems import _get_result_data, user_attempted_ids, user_completed_ids, \
+    contest_user_completed_ids, contest_user_attempted_ids
 from judge.utils.ranker import ranker
 from judge.utils.stats import get_bar_chart, get_pie_chart, get_stacked_bar_chart
 from judge.utils.views import DiggPaginatorMixin, QueryStringSortMixin, SingleObjectFormView, TitleMixin, \
@@ -324,8 +325,11 @@ class ContestDetail(ContestMixin, TitleMixin, CommentedDetailView):
         context['can_announce'] = self.object.is_editable_by(self.request.user)
 
         authenticated = self.request.user.is_authenticated
-        context['completed_problem_ids'] = user_completed_ids(self.request.profile) if authenticated else []
-        context['attempted_problem_ids'] = user_attempted_ids(self.request.profile) if authenticated else []
+        # context['completed_problem_ids'] = user_completed_ids(self.request.profile) if authenticated else []
+        # context['attempted_problem_ids'] = user_attempted_ids(self.request.profile) if authenticated else []
+
+        context['completed_problem_ids'] = contest_user_completed_ids(self.request.profile, self.object) if authenticated else []
+        context['attempted_problem_ids'] = contest_user_attempted_ids(self.request.profile, self.object) if authenticated else []
 
         context['can_download_data'] = bool(settings.DMOJ_CONTEST_DATA_DOWNLOAD)
 
