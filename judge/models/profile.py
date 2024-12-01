@@ -65,14 +65,28 @@ class Organization(models.Model):
 
     _pp_table = [pow(settings.VNOJ_ORG_PP_STEP, i) for i in range(settings.VNOJ_ORG_PP_ENTRIES)]
 
-    def calculate_points(self, table=_pp_table):
-        data = self.members.get_queryset().order_by('-performance_points') \
-                   .values_list('performance_points', flat=True).filter(performance_points__gt=0)
-        pp = settings.VNOJ_ORG_PP_SCALE * sum(ratio * pp for ratio, pp in zip(table, data))
-        if not float_compare_equal(self.performance_points, pp):
-            self.performance_points = pp
-            self.save(update_fields=['performance_points'])
-        return pp
+    # def calculate_points(self, table=_pp_table):
+    #     data = self.members.get_queryset().order_by('-performance_points') \
+    #                .values_list('performance_points', flat=True).filter(performance_points__gt=0)
+    #     pp = settings.VNOJ_ORG_PP_SCALE * sum(ratio * pp for ratio, pp in zip(table, data))
+    #     if not float_compare_equal(self.performance_points, pp):
+    #         self.performance_points = pp
+    #         self.save(update_fields=['performance_points'])
+    #     return pp
+
+    def calculate_points(self):
+        from judge.models.contest import Contest
+        from judge.models.submission import Submission
+        total = 0
+        for contest in Contest.objects.filter(organizations=self):
+            total += sum(Submission.objects.filter(
+                result='AC',
+                case_points__gte=F('case_total'),
+                contest_object=contest).values_list('points', flat=True)
+                )
+        self.performance_points = total
+        self.save(update_fields=['performance_points'])
+        return total
 
     def on_user_changes(self):
         self.calculate_points()
