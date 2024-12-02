@@ -98,7 +98,9 @@ class QueryStringSortMixin(object):
 
         order = {key: '' for key in self.all_sorts}
         order[current] = ' \u25BE' if self.order.startswith('-') else ' \u25B4'
-        return {'sort_links': links, 'sort_order': order}
+        context = {'sort_links': links, 'sort_order': order}
+        print(context)
+        return context
 
     def get_sort_paginate_context(self):
         return paginate_query_context(self.request)
