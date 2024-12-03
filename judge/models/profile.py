@@ -286,6 +286,7 @@ class Profile(models.Model):
     
     def calculate_points(self):
         from judge.models import Problem
+        from judge.models import Submission
         public_problems = Problem.objects.all()
         data = (
             public_problems.filter(submission__user=self, submission__points__isnull=False, submission__result='AC')
@@ -298,6 +299,14 @@ class Profile(models.Model):
                                    submission__case_points__gte=F('submission__case_total'))
             .values('id').distinct().count()
         )
+        result = (Submission.objects.filter(user=self, result='AC', case_points__gte=F('case_total'))
+                  .values('contest_object__organizations__id')
+                  .annotate(total_points=Sum('points'))
+                  .order_by('contest_object__organizations__id')
+                  )
+        result_dict = {item['contest_object__organizations__id']: item['total_points'] for item in result}
+        self.organization_points = result_dict
+        self.save(update_fields=['organization_points'])
         if not float_compare_equal(self.points, points) or \
            problems != self.problem_count:
             self.points = points

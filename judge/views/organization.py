@@ -4,9 +4,9 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.auth.models import Group
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
-from django.db.models import Count, FilteredRelation, Q
-from django.db.models.expressions import F, Value
-from django.db.models.functions import Coalesce
+from django.db.models import Count, FilteredRelation, Q, FloatField
+from django.db.models.expressions import F, Value, RawSQL
+from django.db.models.functions import Coalesce, Cast
 from django.forms import Form, modelformset_factory
 from django.http import Http404, HttpResponsePermanentRedirect, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -110,8 +110,23 @@ class OrganizationUsers(QueryStringSortMixin, DiggPaginatorMixin, BaseOrganizati
     context_object_name = 'users'
 
     def get_queryset(self):
-        return self.object.members.filter(is_unlisted=False).order_by(self.order) \
+        # users = self.object.members.filter(is_unlisted=False)
+        query_set = self.object.members.filter(is_unlisted=False).order_by(self.order) \
             .select_related('user', 'display_badge').defer('about', 'user_script', 'notes')
+        print(query_set.query)
+        return query_set
+        # if self.order in ['performance_points', '-performance_points']:
+        #     reverse = self.order == '-performance_points'  # Determine sorting direction
+
+        #     # Annotate the points for the specific organization ID
+        #     return users.annotate(
+        #         org_points=Cast(
+        #             RawSQL("JSON_EXTRACT(organization_points, %s)", (f"$.{self.object.id}",)),
+        #             FloatField()
+        #         )
+        #     ).order_by('-org_points' if reverse else 'org_points').select_related('user', 'display_badge').defer('about', 'user_script', 'notes')
+        # else:
+        #     return users.order_by(self.order).select_related('user', 'display_badge').defer('about', 'user_script', 'notes')
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationUsers, self).get_context_data(**kwargs)
