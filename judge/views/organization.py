@@ -110,23 +110,25 @@ class OrganizationUsers(QueryStringSortMixin, DiggPaginatorMixin, BaseOrganizati
     context_object_name = 'users'
 
     def get_queryset(self):
-        # users = self.object.members.filter(is_unlisted=False)
-        query_set = self.object.members.filter(is_unlisted=False).order_by(self.order) \
-            .select_related('user', 'display_badge').defer('about', 'user_script', 'notes')
+        users = self.object.members.filter(is_unlisted=False)
+        # query_set = self.object.members.filter(is_unlisted=False).order_by(self.order) \
+        #     .select_related('user', 'display_badge').defer('about', 'user_script', 'notes')
+        # print(query_set.query)
+        # return query_set
+        if self.order in ['performance_points', '-performance_points']:
+            reverse = self.order == '-performance_points'  # Determine sorting direction
+
+            # Annotate the points for the specific organization ID
+            query_set =  users.annotate(
+                org_points=Cast(
+                    RawSQL("JSON_EXTRACT(organization_points, %s)", (f"$.{self.object.id}",)),
+                    FloatField()
+                )
+            ).order_by('-org_points' if reverse else 'org_points').select_related('user', 'display_badge').defer('about', 'user_script', 'notes')
+        else:
+            query_set = users.order_by(self.order).select_related('user', 'display_badge').defer('about', 'user_script', 'notes')
         print(query_set.query)
         return query_set
-        # if self.order in ['performance_points', '-performance_points']:
-        #     reverse = self.order == '-performance_points'  # Determine sorting direction
-
-        #     # Annotate the points for the specific organization ID
-        #     return users.annotate(
-        #         org_points=Cast(
-        #             RawSQL("JSON_EXTRACT(organization_points, %s)", (f"$.{self.object.id}",)),
-        #             FloatField()
-        #         )
-        #     ).order_by('-org_points' if reverse else 'org_points').select_related('user', 'display_badge').defer('about', 'user_script', 'notes')
-        # else:
-        #     return users.order_by(self.order).select_related('user', 'display_badge').defer('about', 'user_script', 'notes')
 
     def get_context_data(self, **kwargs):
         context = super(OrganizationUsers, self).get_context_data(**kwargs)
