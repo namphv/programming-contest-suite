@@ -134,9 +134,9 @@ class OrganizationUsers(QueryStringSortMixin, DiggPaginatorMixin, BaseOrganizati
         elif self.order == '-performance_points':
             query_order = '-org_points'
         elif self.order == 'problem_count':
-            query_order == 'submission_count'
+            query_order = 'submission_count'
         elif self.order == '-problem_count':
-            query_order == '-submission_count'
+            query_order = '-submission_count'
         else:
             query_order = self.order
 
