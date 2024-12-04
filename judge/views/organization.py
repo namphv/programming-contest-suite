@@ -121,7 +121,7 @@ class OrganizationUsers(QueryStringSortMixin, DiggPaginatorMixin, BaseOrganizati
                     FloatField()
                 ),
                 submission_count=RawSQL(
-                    "JSON_EXTRACT(organization_points, %s)", (json_path_submissions,)
+                    "IFNULL(CAST(JSON_UNQUOTE(JSON_EXTRACT(organization_points, %s)) AS UNSIGNED), 0)", (json_path_submissions,)
                 )
             )
         # query_set = self.object.members.filter(is_unlisted=False).order_by(self.order) \
