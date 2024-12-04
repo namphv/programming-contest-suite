@@ -110,10 +110,18 @@ class OrganizationUsers(QueryStringSortMixin, DiggPaginatorMixin, BaseOrganizati
     context_object_name = 'users'
 
     def get_queryset(self):
+        organization_id = self.object.id
+        json_path_points = f'$.\"{organization_id}\"[0]'
+        json_path_submissions = f'$.\"{organization_id}\"[1]'
         users = self.object.members.filter(is_unlisted=False).annotate(
                 org_points=Cast(
-                    RawSQL("JSON_EXTRACT(organization_points, %s)", (f"$.{self.object.id}",)),
+                    RawSQL(
+                        "JSON_EXTRACT(organization_points, %s)", (json_path_points,)
+                        ),
                     FloatField()
+                ),
+                submission_count=RawSQL(
+                    "JSON_EXTRACT(organization_points, %s)", (json_path_submissions,)
                 )
             )
         # query_set = self.object.members.filter(is_unlisted=False).order_by(self.order) \
@@ -125,6 +133,10 @@ class OrganizationUsers(QueryStringSortMixin, DiggPaginatorMixin, BaseOrganizati
             query_order = 'org_points'
         elif self.order == '-performance_points':
             query_order = '-org_points'
+        elif self.order == 'problem_count':
+            query_order == 'submission_count'
+        elif self.order == '-problem_count':
+            query_order == '-submission_count'
         else:
             query_order = self.order
 
