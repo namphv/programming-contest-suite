@@ -10,7 +10,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import F, Max, Sum, Count
+from django.db.models import F, Max, Sum, Count, Subquery
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_bytes
@@ -299,11 +299,24 @@ class Profile(models.Model):
                                    submission__case_points__gte=F('submission__case_total'))
             .values('id').distinct().count()
         )
-        result = (Submission.objects.filter(user=self, result='AC', case_points__gte=F('case_total'))
-                  .values('contest_object__organizations__id')
-                  .annotate(total_points=Sum('points'), submission_count=Count('id'))
-                  .order_by('contest_object__organizations__id')
-                  )
+
+        latest_submission_ids = (
+            Submission.objects.filter(user=self, result='AC', case_points__gte=F('case_total'))
+            .values('problem', 'contest_object__organizations')
+            .annotate(latest_id=Max('id'))).values('latest_id').distinct()
+        latest_submissions = Submission.objects.filter(id__in=Subquery(latest_submission_ids))
+
+        result = (
+            latest_submissions.values('contest_object__organizations__id')
+                .annotate(
+                    total_points=Sum('points'),
+                    submission_count=Count('id')
+                    ))
+        # result = (Submission.objects.filter(user=self, result='AC', case_points__gte=F('case_total'))
+        #           .values('contest_object__organizations__id')
+        #           .annotate(total_points=Sum('points'), submission_count=Count('id'))
+        #           .order_by('contest_object__organizations__id')
+        #           )
         result_dict = {item['contest_object__organizations__id']: (item['total_points'], item['submission_count']) for item in result}
         self.organization_points = result_dict
         self.save(update_fields=['organization_points'])
