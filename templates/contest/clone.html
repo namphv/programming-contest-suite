@@ -25,6 +25,25 @@
     </style>
 {% endblock %}
 
+{% macro form_as_row(form) -%}
+    {% if form.non_field_errors() %}
+    <tr>
+        <td colspan="6">{{ form.non_field_errors() }}</td>
+    </tr>
+    {% endif %}
+    <tr>
+        <td>{{ form.id }} {{ form.language.errors }}{{ form.language }}</td>
+        <td>{{ form.time_limit.errors }}{{ form.time_limit }}</td>
+        <td>{{ form.memory_limit.errors }}{{ form.memory_limit }}</td>
+        <td>
+        {% if lang_limit_formset.can_delete and form.instance.pk %}
+            {{ form.DELETE }}
+        {% endif %}
+        </td>
+    <tr>
+{%- endmacro %}
+
+
 {% block body %}
     <form id="contest-clone-panel" action="" method="post" class="form-area">
         {% csrf_token %}
@@ -36,13 +55,11 @@
 
         <div><label class="inline-header grayed">{{ _('Enter a new key for the cloned contest:') }}</label></div>
         <div id="contest-key-container"><span class="fullwidth">{{ form.key }}</span></div>
-        {% macro form_as_row(form) -%}
-            <div id="form_set">
-                {% for form in contest_problem_formset %}
-                    {{ form_as_row(form) }}
-                {% endfor %}
-            </div>
-        {%- endmacro %}
+        <div id="form_set">
+            {% for form in contest_problem_formset %}
+                {{ form_as_row(form) }}
+            {% endfor %}
+        </div>
         <hr>
         <button style="float: right;" type="submit">{{ _('Clone!') }}</button>
     </form>
