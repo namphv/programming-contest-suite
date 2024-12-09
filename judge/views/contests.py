@@ -370,6 +370,20 @@ class ContestClone(ContestMixin, PermissionRequiredMixin, TitleMixin, SingleObje
             raise PermissionDenied(_('You are not allowed to edit this contest.'))
         return contest
 
+    def get_contest_problem_formset(self):
+
+        if self.request.POST:
+            form_set = ProposeContestProblemFormSet(self.request.POST, instance=self.get_object())
+        else:
+            form_set =ProposeContestProblemFormSet(instance=self.get_object())
+        print(form_set)
+        return form_set
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        data['contest_problem_formset'] = self.get_contest_problem_formset()
+        return data
+
     def form_valid(self, form):
         contest = self.object
         print(f'------------------------------------{contest}-------------------------------')
