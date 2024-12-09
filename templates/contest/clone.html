@@ -32,11 +32,12 @@
     </tr>
     {% endif %}
     <tr>
-        <td>{{ form.id }} {{ form.language.errors }}{{ form.language }}</td>
-        <td>{{ form.time_limit.errors }}{{ form.time_limit }}</td>
-        <td>{{ form.memory_limit.errors }}{{ form.memory_limit }}</td>
+        <td>{{ form.id }} {{ form.problem.errors }}{{ form.problem }}</td>
+        <td class="points-column">{{ form.points.errors }}{{ form.points }}</td>
+        <td>{{ form.order.errors }}{{ form.order }}</td>
+        <td>{{ form.max_submissions.errors }}{{ form.max_submissions }}</td>
         <td>
-        {% if lang_limit_formset.can_delete and form.instance.pk %}
+        {% if contest_problem_formset.can_delete and form.instance.pk %}
             {{ form.DELETE }}
         {% endif %}
         </td>
