@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block js_media %}
+    {% include "leave-warning.html" %}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script type="text/javascript">
+        window.django = {jQuery: $};
+    </script>
+
+    <script>
+        // This code activates flatpickr on fields with the 'datetimefield' class when the document has loaded
+        window.addEventListener("DOMContentLoaded", function () {
+            flatpickr(".datetimefield", {
+                enableTime: true,
+                enableSeconds: true,
+                dateFormat: "Y-m-d H:i:S",
+                time_24hr: true,
+            });
+        });
+    </script>
+
+    <script src="{{ static('vnoj/jquery.formset.js') }}"></script>
+    <script type="text/javascript">
+        $(function() {
+            $('#form_set tr').formset({
+                prefix: '{{ contest_problem_formset.prefix }}'
+            });
+
+            var noResults = function () {
+                return '{{ _('Press Enter to select multiple users...') }}';
+            };
+
+            $(document).one('click', '#id_private_contestants + .select2', function (e) {
+                $('#id_private_contestants').data().select2.options.get('translations').dict['noResults'] = noResults;
+            });
+
+            $(document).on('keyup', '#id_private_contestants + .select2 .select2-search__field', function (e) {
+                if (e.keyCode === 13) {
+                    var $id_private_contestants = $('#id_private_contestants');
+                    var contestants = $(this).val().split(/[\s,]+/);
+                    if (contestants.length <= 1) {
+                        // Skip to let select2 handle this
+                        return;
+                    }
+
+                    $.ajax({
+                        type: 'GET',
+                        url: $id_private_contestants.data().select2.dataAdapter.ajaxOptions.url,
+                        data: {
+                            multiple_terms: contestants,
+                        },
+                        success: function (response) {
+                            for (const contestant of response.results) {
+                                $id_private_contestants.select2('trigger', 'select', {
+                                    data: contestant,
+                                });
+                            }
+                        },
+                    });
+                }
+            });
+        })
+    </script>
+    {{ form.media.js }}
+{% endblock %}
+
+{% block media %}
+    <style>
+        #contest-clone-panel {
+            position: relative;
+            margin: 5em auto auto -10em;
+            top: 40%;
+            left: 50%;
+        }
+
+        #contest-key-container {
+            margin: 0.5em 0;
+        }
+
+        #id_key {
+            width: 100%;
+        }
+
+        ul.errorlist {
+            list-style-type: none;
+            padding-left: 0;
+            text-align: center;
+        }
+    </style>
+{% endblock %}
+
+{% macro form_as_row(form) -%}
+    {% if form.non_field_errors() %}
+    <tr>
+        <td colspan="6">{{ form.non_field_errors() }}</td>
+    </tr>
+    {% endif %}
+    <tr>
+        <td>{{ form.id }} {{ form.problem.errors }}{{ form.problem }}</td>
+        <td class="points-column">{{ form.points.errors }}{{ form.points }}</td>
+        <td>{{ form.order.errors }}{{ form.order }}</td>
+        <td>{{ form.max_submissions.errors }}{{ form.max_submissions }}</td>
+        <td>
+        {% if contest_problem_formset.can_delete and form.instance.pk %}
+            {{ form.DELETE }}
+        {% endif %}
+        </td>
+    <tr>
+{%- endmacro %}
+
+
+{% block body %}
+    <form id="contest-clone-panel" action="" method="post" class="form-area">
+        {% csrf_token %}
+        {% if form.errors %}
+            <div id="form-errors">
+                {{ form.key.errors }}
+            </div>
+        {% endif %}
+
+        <div><label class="inline-header grayed">{{ _('Enter a new key for the cloned contest:') }}</label></div>
+        <div id="contest-key-container"><span class="fullwidth">{{ form.key }}</span></div>
+        <div id="form_set">
+            {% for form in contest_problem_formset %}
+                {{ form_as_row(form) }}
+            {% endfor %}
+        </div>
+        <hr>
+        <button style="float: right;" type="submit">{{ _('Clone!') }}</button>
+    </form>
+{% endblock %}

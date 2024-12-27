@@ -236,6 +236,7 @@ urlpatterns = [
         path('/moss/delete', contests.ContestMossDelete.as_view(), name='contest_moss_delete'),
         path('/announce', contests.ContestAnnounce.as_view(), name='contest_announce'),
         path('/clone', contests.ContestClone.as_view(), name='contest_clone'),
+        path('/clone2', contests.ContestClone2.as_view(), name='contest_clone2'),
         path('/ranking/', contests.ContestRanking.as_view(), name='contest_ranking'),
         path('/public_ranking/', contests.ContestPublicRanking.as_view(), name='contest_public_ranking'),
         path('/official_ranking/', contests.ContestOfficialRanking.as_view(), name='contest_official_ranking'),

@@ -423,6 +423,72 @@ class ContestClone(ContestMixin, PermissionRequiredMixin, TitleMixin, SingleObje
         return HttpResponseRedirect(reverse('contest_edit', args=(contest.key,)))
 
 
+class ContestClone2(ContestMixin, PermissionRequiredMixin, TitleMixin, SingleObjectFormView):
+    title = gettext_lazy('Clone Contest')
+    template_name = 'contest/clone2.html'
+    form_class = ContestCloneForm
+    permission_required = 'judge.clone_contest'
+    permission_denied_message = _('You are not allowed to clone contests.')
+
+    def get_object(self, queryset=None):
+        contest = super().get_object(queryset)
+        if not contest.is_editable_by(self.request.user):
+            raise PermissionDenied(_('You are not allowed to edit this contest.'))
+        return contest
+
+    def get_contest_problem_formset(self):
+
+        if self.request.POST:
+            form_set = ProposeContestProblemFormSet(self.request.POST, instance=self.get_object())
+        else:
+            form_set =ProposeContestProblemFormSet(instance=self.get_object())
+        print(form_set)
+        return form_set
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        data['contest_problem_formset'] = self.get_contest_problem_formset()
+        return data
+
+    def form_valid(self, form):
+        contest = self.object
+        print(f'------------------------------------{contest}-------------------------------')
+
+        tags = contest.tags.all()
+        organizations = contest.organizations.all()
+        private_contestants = contest.private_contestants.all()
+        view_contest_scoreboard = contest.view_contest_scoreboard.all()
+        contest_problems = contest.contest_problems.all()
+        print(f'--------------------{contest_problems}++++++++++++++++++++++++++++++++ ')
+        old_key = contest.key
+
+        contest.pk = None
+        contest.is_visible = False
+        contest.user_count = 0
+        contest.virtual_count = 0
+        contest.locked_after = None
+        contest.key = form.cleaned_data['key']
+        with revisions.create_revision(atomic=True):
+            contest.save()
+            contest.tags.set(tags)
+            contest.organizations.set(organizations)
+            contest.private_contestants.set(private_contestants)
+            contest.view_contest_scoreboard.set(view_contest_scoreboard)
+            contest.authors.add(self.request.profile)
+            print(f'--------------------{contest_problems}++++++++++++++++++++++++++++++++ ')
+
+            for problem in contest_problems:
+                problem.contest = contest
+                problem.pk = None
+                problem.save()
+            #ContestProblem.objects.bulk_create(contest_problems)
+
+            revisions.set_user(self.request.user)
+            revisions.set_comment(_('Cloned contest from %s') % old_key)
+
+        return HttpResponseRedirect(reverse('contest_edit', args=(contest.key,)))
+
+
 class ContestAnnounce(ContestMixin, TitleMixin, SingleObjectFormView):
     title = gettext_lazy('Create contest announcement')
     template_name = 'contest/create-announcement.html'
