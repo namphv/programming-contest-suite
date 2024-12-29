@@ -122,12 +122,14 @@
         <div id="contest-key-container"><span class="fullwidth">{{ form.key }}</span></div>
         <div><label class="inline-header grayed">{{ _('Select an organization:') }}</label></div>
         <div id="organization-container">
-            <select name="organization">
-                <option value="">--</option>
-                {% for org in organization_list %}
-                    <option value="{{ org.id }}">{{ org.name }}</option>
-                {% endfor %}
-            </select>
+            <span class="fullwidth">
+                <select name="organization" class="fullwidth">
+                    <option value="">--</option>
+                    {% for org in organization_list %}
+                        <option value="{{ org.id }}">{{ org.name }}</option>
+                    {% endfor %}
+                </select>
+            </span>
         </div>
         <hr>
         <button style="float: right;" type="submit">{{ _('Clone!') }}</button>
