@@ -120,10 +120,14 @@
 
         <div><label class="inline-header grayed">{{ _('Enter a new key for the cloned contest:') }}</label></div>
         <div id="contest-key-container"><span class="fullwidth">{{ form.key }}</span></div>
-        <div id="form_set">
-            {% for form in contest_problem_formset %}
-                {{ form_as_row(form) }}
-            {% endfor %}
+        <div><label class="inline-header grayed">{{ _('Select an organization:') }}</label></div>
+        <div id="organization-container">
+            <select name="organization">
+                <option value="">--</option>
+                {% for org in organization_list %}
+                    <option value="{{ org.id }}">{{ org.name }}</option>
+                {% endfor %}
+            </select>
         </div>
         <hr>
         <button style="float: right;" type="submit">{{ _('Clone!') }}</button>

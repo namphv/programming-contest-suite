@@ -437,17 +437,18 @@ class ContestClone2(ContestMixin, PermissionRequiredMixin, TitleMixin, SingleObj
         return contest
 
     def get_contest_problem_formset(self):
-
         if self.request.POST:
             form_set = ProposeContestProblemFormSet(self.request.POST, instance=self.get_object())
         else:
-            form_set =ProposeContestProblemFormSet(instance=self.get_object())
+            form_set = ProposeContestProblemFormSet(instance=self.get_object())
         print(form_set)
         return form_set
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
         data['contest_problem_formset'] = self.get_contest_problem_formset()
+        data['organization_list'] = Organization.objects.all()
+
         return data
 
     def form_valid(self, form):
@@ -468,10 +469,15 @@ class ContestClone2(ContestMixin, PermissionRequiredMixin, TitleMixin, SingleObj
         contest.virtual_count = 0
         contest.locked_after = None
         contest.key = form.cleaned_data['key']
+        print(f'--------------------{form.cleaned_data}++++++++++++++++++++++++++++++++ ')
         with revisions.create_revision(atomic=True):
             contest.save()
             contest.tags.set(tags)
-            contest.organizations.set(organizations)
+            # contest.organizations.set(organizations)
+            if form.cleaned_data['organizations']:
+                contest.organizations.set(form.cleaned_data['organizations'])
+            else:
+                contest.organizations.set(organizations)
             contest.private_contestants.set(private_contestants)
             contest.view_contest_scoreboard.set(view_contest_scoreboard)
             contest.authors.add(self.request.profile)

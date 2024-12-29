@@ -4678,6 +4678,10 @@ msgstr ""
 msgid "Enter a new key for the cloned contest:"
 msgstr ""
 
+#: templates/contest/clone2.html:37
+msgid "Select an organization:"
+msgstr ""
+
 #: templates/contest/clone.html:40 templates/problem/clone.html:40
 msgid "Clone!"
 msgstr ""
