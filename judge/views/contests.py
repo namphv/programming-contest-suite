@@ -474,8 +474,9 @@ class ContestClone2(ContestMixin, PermissionRequiredMixin, TitleMixin, SingleObj
             contest.save()
             contest.tags.set(tags)
             # contest.organizations.set(organizations)
-            if form.cleaned_data['organizations']:
-                contest.organizations.set(form.cleaned_data['organizations'])
+            org_id = form.cleaned_data.get('organization')
+            if org_id:
+                contest.organizations.set(Organization.objects.get(pk=org_id))
             else:
                 contest.organizations.set(organizations)
             contest.private_contestants.set(private_contestants)
