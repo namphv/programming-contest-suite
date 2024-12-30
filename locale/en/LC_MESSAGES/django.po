@@ -4678,7 +4678,7 @@ msgstr ""
 msgid "Enter a new key for the cloned contest:"
 msgstr ""
 
-#: templates/contest/clone2.html:37
+#: templates/contest/clone2.html:123
 msgid "Select an organization:"
 msgstr ""
 

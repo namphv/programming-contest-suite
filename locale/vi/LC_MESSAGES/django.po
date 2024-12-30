@@ -4858,9 +4858,9 @@ msgstr "Thứ bảy"
 msgid "Enter a new key for the cloned contest:"
 msgstr "Nhập mã mới cho kỳ thi nhân bản:"
 
-#: templates/contest/clone2.html:37
+#: templates/contest/clone2.html:123
 msgid "Select an organization:"
-msgstr "Lựa chọn tổ chức khác:"
+msgstr "Chọn tổ chức khác cho kỳ thi:"
 
 #: templates/contest/clone.html:40 templates/problem/clone.html:40
 msgid "Clone!"
