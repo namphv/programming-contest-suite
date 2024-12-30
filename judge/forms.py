@@ -582,6 +582,7 @@ class ContestAnnouncementForm(forms.ModelForm):
 
 class ContestCloneForm(Form):
     key = CharField(max_length=32, validators=[RegexValidator('^[a-z0-9_]+$', _('Contest id must be ^[a-z0-9_]+$'))])
+    organization = CharField(required=False)
 
     def clean_key(self):
         key = self.cleaned_data['key']
