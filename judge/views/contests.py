@@ -376,7 +376,6 @@ class ContestClone(ContestMixin, PermissionRequiredMixin, TitleMixin, SingleObje
             form_set = ProposeContestProblemFormSet(self.request.POST, instance=self.get_object())
         else:
             form_set =ProposeContestProblemFormSet(instance=self.get_object())
-        print(form_set)
         return form_set
 
     def get_context_data(self, **kwargs):
@@ -476,7 +475,7 @@ class ContestClone2(ContestMixin, PermissionRequiredMixin, TitleMixin, SingleObj
             # contest.organizations.set(organizations)
             org_id = form.cleaned_data.get('organization')
             if org_id:
-                contest.organizations.set(Organization.objects.get(pk=org_id))
+                contest.organizations.set(Organization.objects.filter(pk=org_id))
             else:
                 contest.organizations.set(organizations)
             contest.private_contestants.set(private_contestants)
