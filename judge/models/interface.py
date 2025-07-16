@@ -12,7 +12,7 @@ from mptt.models import MPTTModel
 
 from judge.models.profile import Organization, Profile
 
-__all__ = ['MiscConfig', 'validate_regex', 'NavigationBar', 'BlogPost']
+__all__ = ['MiscConfig', 'validate_regex', 'NavigationBar', 'BlogPost', 'Tutorial']
 
 
 class MiscConfig(models.Model):
@@ -131,6 +131,70 @@ class BlogPost(models.Model):
         )
         verbose_name = _('blog post')
         verbose_name_plural = _('blog posts')
+
+
+class Tutorial(models.Model):
+    title = models.CharField(verbose_name=_('tutorial title'), max_length=100)
+    authors = models.ManyToManyField(Profile, verbose_name=_('authors'), blank=True)
+    slug = models.SlugField(verbose_name=_('slug'))
+    visible = models.BooleanField(verbose_name=_('public visibility'), default=False)
+    publish_on = models.DateTimeField(verbose_name=_('publish after'))
+    content = models.TextField(verbose_name=_('tutorial content'))
+    summary = models.TextField(verbose_name=_('tutorial summary'), blank=True)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, verbose_name=_('organization'),
+                                     related_name='tutorials', blank=True, null=True, db_index=True)
+    
+    # Tutorial-specific fields
+    slide_deck_url = models.URLField(verbose_name=_('slide deck URL'), blank=True, null=True,
+                                     help_text=_('URL to embedded slide deck presentation'))
+    scratch_code = models.TextField(verbose_name=_('scratch code examples'), blank=True,
+                                    help_text=_('Scratch programming examples for this tutorial'))
+    python_code = models.TextField(verbose_name=_('python code examples'), blank=True,
+                                   help_text=_('Python code examples for this tutorial'))
+    scratch_image = models.ImageField(verbose_name=_('scratch image'), upload_to='tutorial_images/', blank=True, null=True,
+                                      help_text=_('Image to display in the Scratch tab'))
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse('tutorial_detail', args=(self.id, self.slug))
+
+    def can_see(self, user):
+        # Tutorial is public
+        if self.visible and self.publish_on <= timezone.now():
+            # Tutorial is private to an organization
+            if self.organization:
+                if not user.is_authenticated:
+                    return False
+                if user.profile.organizations.filter(id=self.organization.pk).exists():
+                    return True
+                return self.is_editable_by(user)
+            
+            # Global tutorial should always be visible
+            return True
+
+        # Tutorial is not public
+        return self.is_editable_by(user)
+
+    def is_editable_by(self, user):
+        if not user.is_authenticated:
+            return False
+        if user.has_perm('judge.edit_all_tutorial'):
+            return True
+        if self.organization:
+            return self.organization.is_admin(user.profile) and \
+                user.has_perm('judge.edit_organization_tutorial') and \
+                self.authors.filter(id=user.profile.id).exists()
+        return self.authors.filter(id=user.profile.id).exists()
+
+    class Meta:
+        permissions = (
+            ('edit_all_tutorial', _('Edit all tutorials')),
+            ('edit_organization_tutorial', _('Edit organization tutorials')),
+        )
+        verbose_name = _('tutorial')
+        verbose_name_plural = _('tutorials')
 
 
 class BlogVote(models.Model):
