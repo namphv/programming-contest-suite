@@ -1,0 +1,631 @@
+{% extends "base.html" %}
+
+{% set logged_in = request.user.is_authenticated %}
+{% set profile = request.profile if logged_in else None %}
+
+{% block js_media %}
+    {% include "blog/media-js.html" %}
+{% endblock %}
+
+{% block media %}
+    
+    <!-- Tutorial specific styles -->
+    <style>
+        .tutorial-section {
+            margin-bottom: 30px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .tutorial-section-title {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            margin: 0;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 1.2em;
+            color: #495057;
+        }
+        
+        .tutorial-section-content {
+            padding: 20px;
+        }
+        
+        .code-actions, .slide-actions {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .code-actions .btn, .slide-actions .btn {
+            margin: 0 5px 5px 0;
+        }
+        
+        .editor-container {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .editor-actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .editor-actions .btn {
+            margin: 0;
+            white-space: nowrap;
+        }
+        
+        .execution-results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        
+        .execution-results h4 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #495057;
+        }
+        
+        .result-container .result-status {
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .result-container .result-output pre {
+            margin: 0;
+            border: none;
+            background: #ffffff !important;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .result-container .result-timing {
+            margin-top: 10px;
+            text-align: right;
+        }
+        
+        .slide-note {
+            text-align: center;
+            margin-top: 15px;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        /* Tab styling */
+        .editor-tabs {
+            border-bottom: 1px solid #ddd;
+            background: #f8f9fa;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .tab-btn {
+            background: #e9ecef;
+            border: 2px solid #adb5bd;
+            border-bottom: none;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+            transition: all 0.3s ease;
+            border-radius: 6px 6px 0 0;
+            margin-right: 2px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .tab-btn:hover {
+            background: #dee2e6;
+            color: #212529;
+            border-color: #6c757d;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        
+        .tab-btn.active {
+            color: #fff;
+            background: #007bff;
+            border-color: #007bff;
+            font-weight: 700;
+            box-shadow: 0 3px 8px rgba(0,123,255,0.3);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .scratch-info {
+            background: #e7f3ff;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .scratch-info h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #0c5460;
+        }
+        
+        .scratch-info p {
+            margin-bottom: 0;
+            color: #0c5460;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .tutorial-section-content {
+                padding: 15px;
+            }
+            
+            .editor-actions {
+                gap: 8px;
+                flex-direction: column;
+            }
+            
+            .editor-actions .btn {
+                padding: 8px 16px;
+                font-size: 0.9em;
+                width: 100%;
+                max-width: 200px;
+            }
+            
+            #tutorial-python-editor, #tutorial-scratch-editor {
+                height: 250px !important;
+            }
+            
+            .tab-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block title_row %}
+<div id="tutorial-{{ tutorial.id }}" style="display: flex; gap: 0.5em;">
+    <div class="tutorial-icon">
+        <i class="fa fa-graduation-cap fa-2x" style="color: #4CAF50;"></i>
+    </div>
+    <div style="width: 100%;">
+        <h2 style="display:inline">
+            {% block content_title %}
+                {% if content_title %}{{ content_title }}{% else %}{{ title }}{% endif %}
+            {% endblock %}
+        </h2>
+        {% if tutorial.organization %}
+            <span class="organization-tag" style="display: inline;">
+                <a href="{{ tutorial.organization.get_absolute_url() }}">
+                    <i class="fa fa-lock"></i> {{ tutorial.organization.name }}
+                </a>
+            </span>
+        {% endif %}
+        {% if tutorial.is_editable_by(request.user) %}
+            <div class="title-line-action">[<a href="{{ url('tutorial_edit', tutorial.id, tutorial.slug) }}">{{ _('Edit') }}</a>]</div>
+        {% endif %}
+        <div class="time">
+            {% with authors=tutorial.authors.all() %}
+                {%- if authors -%}
+                    <span class="post-authors">{{ link_users(authors) }}</span>
+                {%- endif -%}
+            {% endwith %}
+            <span class="post-time">
+                {% trans trimmed time=tutorial.publish_on|date(_("N j, Y, g:i a")) %}
+                    published on {{ time }}
+                {% endtrans %}
+            </span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block body %}
+    <div class="post-full">
+        <!-- Main Tutorial Content -->
+        <div class="tutorial-section">
+            <div class="body content-description">
+                {% cache 86400 'tutorial_content' tutorial.id MATH_ENGINE %}
+                    {{ tutorial.content|markdown('tutorial', MATH_ENGINE)|reference|str|safe}}
+                {% endcache %}
+            </div>
+        </div>
+        
+        <!-- Slide Deck Section -->
+        {% if tutorial.slide_deck_url %}
+            <div class="tutorial-section tutorial-slides">
+                <h3 class="tutorial-section-title">
+                    <i class="fa fa-slideshare"></i> {{ _('Presentation Slides') }}
+                </h3>
+                <div class="tutorial-section-content">
+                    <div class="slide-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                        <iframe src="{{ tutorial.slide_deck_url }}" 
+                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 1px solid #ddd; border-radius: 4px;"
+                                frameborder="0" 
+                                allowfullscreen
+                                loading="lazy"
+                                title="Tutorial Presentation Slides">
+                        </iframe>
+                    </div>
+                    <div class="slide-actions" style="margin-top: 10px; text-align: center;">
+                        <a href="{{ tutorial.slide_deck_url }}" target="_blank" class="btn btn-primary">
+                            <i class="fa fa-external-link"></i> {{ _('Open slides in new tab') }}
+                        </a>
+                        <button class="btn btn-secondary" onclick="toggleSlideFullscreen()" style="margin-left: 10px;">
+                            <i class="fa fa-expand"></i> {{ _('Toggle Fullscreen') }}
+                        </button>
+                    </div>
+                    <p class="slide-note" style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                        <i class="fa fa-info-circle"></i> 
+                        {{ _('Supports Google Slides, PowerPoint Online, SlideShare, and other embed-ready platforms') }}
+                    </p>
+                </div>
+            </div>
+        {% endif %}
+        
+        
+        <!-- Interactive Code Editor Section -->
+        <div class="tutorial-section tutorial-interactive-editor">
+            <h3 class="tutorial-section-title">
+                <i class="fa fa-terminal"></i> {{ _('Interactive Code Editor') }}
+            </h3>
+            <div class="tutorial-section-content">
+                <div class="editor-container">
+                    <!-- Tab Navigation -->
+                    <div class="editor-tabs">
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" data-tab="python" onclick="switchTab('python')">
+                                <i class="fa fa-code"></i> {{ _('Python') }}
+                            </button>
+                            <button class="tab-btn" data-tab="scratch" onclick="switchTab('scratch')">
+                                <i class="fa fa-puzzle-piece"></i> {{ _('Scratch') }}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Python Tab Content -->
+                    <div class="tab-content active" id="python-tab">
+                        <div id="tutorial-python-editor" style="height: 300px; border: 1px solid #ddd;"></div>
+                        
+                        <div class="editor-actions" style="margin-top: 15px;">
+                            <button class="btn btn-success" onclick="runInteractiveCode()" id="run-interactive-btn">
+                                <i class="fa fa-play"></i> {{ _('Run Code') }}
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearEditor()">
+                                <i class="fa fa-trash"></i> {{ _('Clear') }}
+                            </button>
+                            <button class="btn btn-info" onclick="loadExample()">
+                                <i class="fa fa-lightbulb-o"></i> {{ _('Load Example') }}
+                            </button>
+                            {% if tutorial.python_code %}
+                            <button class="btn btn-outline-secondary" onclick="resetToOriginal()">
+                                <i class="fa fa-undo"></i> {{ _('Reset to Original') }}
+                            </button>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="execution-results" id="execution-results" style="margin-top: 15px; display: none;">
+                            <h4>{{ _('Execution Results') }}</h4>
+                            <div class="result-container">
+                                <div class="result-status" id="result-status"></div>
+                                <div class="result-output" id="result-output"></div>
+                                <div class="result-timing" id="result-timing"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Scratch Tab Content -->
+                    <div class="tab-content" id="scratch-tab">
+                        {% if tutorial.scratch_image %}
+                            <div class="scratch-image-container" style="text-align: center; padding: 20px;">
+                                <img src="{{ tutorial.scratch_image.url }}" 
+                                     alt="{{ _('Scratch Tutorial Image') }}" 
+                                     style="max-width: 100%; max-height: 600px; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            </div>
+                        {% else %}
+                            <div class="scratch-placeholder" style="text-align: center; padding: 40px; color: #6c757d;">
+                                <i class="fa fa-image fa-3x" style="margin-bottom: 15px;"></i>
+                                <h4>{{ _('No Scratch Image Available') }}</h4>
+                                <p>{{ _('The tutorial author has not uploaded a Scratch image yet.') }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    <hr>
+    <span class="social">
+        {{ post_to_facebook(request, tutorial, '<i class="fa fa-facebook-official"></i>') }}
+        {{ post_to_twitter(request, SITE_NAME + ':', tutorial, '<i class="fa fa-twitter"></i>') }}
+    </span>
+    <div style="clear: both;"></div>
+{% endblock %}
+
+{% block bodyend %}
+    {{ super() }}
+    {% if REQUIRE_JAX %}
+        {% include "mathjax-load.html" %}
+    {% endif %}
+    
+    <!-- Tutorial JavaScript functionality -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-python.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-github.js"></script>
+    
+    <script>
+        // Initialize ACE Editors
+        let tutorialPythonEditor;
+        let currentSubmissionId = null;
+        let statusCheckInterval = null;
+        let currentTab = 'python';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Python editor
+            tutorialPythonEditor = ace.edit("tutorial-python-editor");
+            tutorialPythonEditor.setTheme("ace/theme/github");
+            tutorialPythonEditor.session.setMode("ace/mode/python");
+            tutorialPythonEditor.setOptions({
+                fontSize: 14,
+                showPrintMargin: false,
+                highlightActiveLine: true,
+                showGutter: true
+            });
+            
+            // Set default Python content from tutorial or fallback
+            {% if tutorial.python_code %}
+            tutorialPythonEditor.setValue(`{{ tutorial.python_code|escapejs }}`, -1);
+            {% else %}
+            tutorialPythonEditor.setValue(`# Welcome to the Interactive Python Editor!
+# Write your Python code here and click "Run Code" to execute it.
+
+print("Hello, Tutorial!")
+
+# Try some basic Python:
+for i in range(3):
+    print(f"Count: {i}")
+`, -1);
+            {% endif %}
+
+            // Scratch tab no longer uses an editor - just displays an image
+        });
+        
+        // Tab switching functionality
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            // Focus the appropriate editor
+            if (tabName === 'python' && tutorialPythonEditor) {
+                tutorialPythonEditor.focus();
+            }
+        }
+        
+        // Scratch tab now displays images - no editor functions needed
+        
+        // Reset to original tutorial code
+        function resetToOriginal() {
+            if (!tutorialPythonEditor) return;
+            
+            {% if tutorial.python_code %}
+            const originalCode = `{{ tutorial.python_code|escapejs }}`;
+            tutorialPythonEditor.setValue(originalCode, -1);
+            {% endif %}
+        }
+        
+        
+        // Helper function to escape HTML for safe display
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Interactive editor functions
+        function runInteractiveCode() {
+            if (!tutorialPythonEditor) return;
+            
+            const code = tutorialPythonEditor.getValue().trim();
+            if (!code) {
+                alert('{{ _("Please enter some Python code to run.") }}');
+                return;
+            }
+            
+            // Disable run button
+            const runBtn = document.getElementById('run-interactive-btn');
+            runBtn.disabled = true;
+            runBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> {{ _("Running...") }}';
+            
+            // Show results section
+            const resultsDiv = document.getElementById('execution-results');
+            resultsDiv.style.display = 'block';
+            
+            // Update status
+            document.getElementById('result-status').innerHTML = '<i class="fa fa-spinner fa-spin"></i> {{ _("Submitting code for execution...") }}';
+            document.getElementById('result-output').innerHTML = '';
+            document.getElementById('result-timing').innerHTML = '';
+            
+            // Send code to backend
+            fetch('/api/tutorial/run/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ code: code })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentSubmissionId = data.submission_id;
+                    document.getElementById('result-status').innerHTML = '<i class="fa fa-clock-o"></i> {{ _("Code submitted. Waiting for execution...") }}';
+                    
+                    // Start polling for status
+                    startStatusPolling();
+                } else {
+                    handleExecutionError(data.error || 'Unknown error');
+                }
+            })
+            .catch(error => {
+                handleExecutionError('Network error: ' + error.message);
+            });
+        }
+        
+        function startStatusPolling() {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+            }
+            
+            statusCheckInterval = setInterval(() => {
+                if (currentSubmissionId) {
+                    checkExecutionStatus();
+                }
+            }, 1000); // Check every second
+        }
+        
+        function checkExecutionStatus() {
+            fetch(`/api/tutorial/status/${currentSubmissionId}/`)
+            .then(response => response.json())
+            .then(data => {
+                const statusEl = document.getElementById('result-status');
+                const outputEl = document.getElementById('result-output');
+                const timingEl = document.getElementById('result-timing');
+                
+                if (data.status === 'D' || data.status === 'IE' || data.status === 'CE' || data.status === 'AB') {
+                    // Execution completed
+                    clearInterval(statusCheckInterval);
+                    statusCheckInterval = null;
+                    
+                    // Re-enable run button
+                    const runBtn = document.getElementById('run-interactive-btn');
+                    runBtn.disabled = false;
+                    runBtn.innerHTML = '<i class="fa fa-play"></i> {{ _("Run Code") }}';
+                    
+                    // Display results based on execution outcome
+                    if (data.success === true) {
+                        statusEl.innerHTML = '<i class="fa fa-check-circle" style="color: green;"></i> {{ _("Execution completed successfully") }}';
+                        outputEl.innerHTML = `<pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; color: #2d3748;">${escapeHtml(data.output || '{{ _("No output") }}')}</pre>`;
+                    } else if (data.success === false) {
+                        statusEl.innerHTML = '<i class="fa fa-exclamation-triangle" style="color: orange;"></i> {{ _("Execution completed with errors") }}';
+                        outputEl.innerHTML = `<pre style="background: #fff3cd; padding: 10px; border-radius: 4px; color: #856404;">${escapeHtml(data.output || '{{ _("Error occurred") }}')}</pre>`;
+                    } else {
+                        statusEl.innerHTML = '<i class="fa fa-question-circle" style="color: gray;"></i> {{ _("Execution completed") }}';
+                        outputEl.innerHTML = `<pre style="background: #f8f9fa; padding: 10px; border-radius: 4px;">${escapeHtml(data.output || '{{ _("Unknown result") }}')}</pre>`;
+                    }
+                    
+                    // Show timing info if available
+                    if (data.time !== null || data.memory !== null) {
+                        let timingInfo = [];
+                        if (data.time !== null) timingInfo.push(`{{ _("Time") }}: ${data.time}s`);
+                        if (data.memory !== null) timingInfo.push(`{{ _("Memory") }}: ${data.memory}KB`);
+                        timingEl.innerHTML = `<small class="text-muted">${timingInfo.join(' | ')}</small>`;
+                    }
+                } else {
+                    // Still executing
+                    statusEl.innerHTML = '<i class="fa fa-spinner fa-spin"></i> {{ _("Executing code...") }}';
+                }
+            })
+            .catch(error => {
+                console.error('Status check error:', error);
+            });
+        }
+        
+        function handleExecutionError(error) {
+            // Re-enable run button
+            const runBtn = document.getElementById('run-interactive-btn');
+            runBtn.disabled = false;
+            runBtn.innerHTML = '<i class="fa fa-play"></i> {{ _("Run Code") }}';
+            
+            // Show error
+            document.getElementById('result-status').innerHTML = '<i class="fa fa-exclamation-circle" style="color: red;"></i> {{ _("Execution failed") }}';
+            document.getElementById('result-output').innerHTML = `<pre style="background: #f8d7da; padding: 10px; border-radius: 4px; color: #721c24;">${escapeHtml(error)}</pre>`;
+            document.getElementById('result-timing').innerHTML = '';
+            
+            // Clear any polling
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+                statusCheckInterval = null;
+            }
+        }
+        
+        function clearEditor() {
+            if (tutorialPythonEditor) {
+                tutorialPythonEditor.setValue('', -1);
+            }
+        }
+        
+        function loadExample() {
+            const exampleCode = `# Example: Working with lists and functions
+def fibonacci(n):
+    \"\"\"Generate fibonacci sequence up to n terms\"\"\"
+    sequence = []
+    a, b = 0, 1
+    for i in range(n):
+        sequence.append(a)
+        a, b = b, a + b
+    return sequence
+
+# Generate first 10 fibonacci numbers
+fib_numbers = fibonacci(10)
+print("First 10 Fibonacci numbers:")
+for i, num in enumerate(fib_numbers):
+    print(f"F({i}) = {num}")
+
+# Calculate sum and average
+total = sum(fib_numbers)
+average = total / len(fib_numbers)
+print(f"\\nSum: {total}")
+print(f"Average: {average:.2f}")`;
+            
+            if (tutorialPythonEditor) {
+                tutorialPythonEditor.setValue(exampleCode, -1);
+            }
+        }
+        
+        // Slide fullscreen toggle
+        function toggleSlideFullscreen() {
+            const slideContainer = document.querySelector('.slide-container');
+            const iframe = slideContainer.querySelector('iframe');
+            
+            if (!document.fullscreenElement) {
+                slideContainer.requestFullscreen().then(() => {
+                    // Adjust iframe for fullscreen
+                    iframe.style.borderRadius = '0';
+                }).catch(err => {
+                    console.error('Error attempting to enable fullscreen:', err);
+                });
+            } else {
+                document.exitFullscreen().then(() => {
+                    // Restore iframe styling
+                    iframe.style.borderRadius = '4px';
+                });
+            }
+        }
+    </script>
+{% endblock %}

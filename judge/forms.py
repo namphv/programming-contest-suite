@@ -22,7 +22,7 @@ from django.utils.translation import gettext_lazy as _, ngettext_lazy
 
 from django_ace import AceWidget
 from judge.models import BlogPost, Contest, ContestAnnouncement, ContestProblem, Language, LanguageLimit, \
-    Organization, Problem, Profile, Solution, Submission, Tag, WebAuthnCredential
+    Organization, Problem, Profile, Solution, Submission, Tag, Tutorial, WebAuthnCredential
 from judge.utils.subscription import newsletter_id
 from judge.widgets import HeavyPreviewPageDownWidget, HeavySelect2MultipleWidget, HeavySelect2Widget, MartorWidget, \
     Select2MultipleWidget, Select2Widget
@@ -641,6 +641,60 @@ class BlogPostForm(ModelForm):
             'content': MartorWidget(attrs={'data-markdownfy-url': reverse_lazy('blog_preview')}),
             'summary': MartorWidget(attrs={'data-markdownfy-url': reverse_lazy('blog_preview')}),
             'publish_on': DateTimeInput(format='%Y-%m-%d %H:%M:%S', attrs={'class': 'datetimefield'}),
+        }
+
+
+class TutorialForm(ModelForm):
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('org_pk', None)
+        super(TutorialForm, self).__init__(*args, **kwargs)
+
+    def clean_slide_deck_url(self):
+        url = self.cleaned_data.get('slide_deck_url')
+        if not url:
+            return url
+            
+        # Transform Google Slides sharing URLs to embed URLs
+        if 'docs.google.com/presentation' in url and '/edit' in url:
+            if '#slide=' in url:
+                # Extract slide ID and convert
+                slide_id = url.split('/d/')[1].split('/')[0]
+                url = f'https://docs.google.com/presentation/d/{slide_id}/embed?start=false&loop=false&delayms=3000'
+            else:
+                # Standard Google Slides URL
+                slide_id = url.split('/d/')[1].split('/')[0]
+                url = f'https://docs.google.com/presentation/d/{slide_id}/embed?start=false&loop=false&delayms=3000'
+        
+        # Transform PowerPoint Online URLs if needed
+        elif 'onedrive.live.com' in url or '1drv.ms' in url:
+            if 'embed' not in url:
+                # Try to convert to embed format
+                url = url.replace('view', 'embed')
+        
+        return url
+
+    class Meta:
+        model = Tutorial
+        fields = ['title', 'publish_on', 'visible', 'content', 'summary', 'slide_deck_url', 'python_code', 'scratch_image']
+        widgets = {
+            'content': MartorWidget(attrs={'data-markdownfy-url': reverse_lazy('tutorial_preview')}),
+            'summary': MartorWidget(attrs={'data-markdownfy-url': reverse_lazy('tutorial_preview')}),
+            'publish_on': DateTimeInput(format='%Y-%m-%d %H:%M:%S', attrs={'class': 'datetimefield'}),
+            'slide_deck_url': forms.URLInput(attrs={'placeholder': 'https://docs.google.com/presentation/d/[ID]/edit or embed URL'}),
+            'python_code': AceWidget(mode='python', theme='github', width='100%', height='400px'),
+            'scratch_image': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+        }
+        labels = {
+            'slide_deck_url': _('Slide Deck URL'),
+            'python_code': _('Python Code Examples'),
+            'scratch_image': _('Scratch Image'),
+        }
+        help_texts = {
+            'content': _('Main tutorial content in Markdown format. You can embed code blocks and interactive elements.'),
+            'summary': _('Brief summary of the tutorial (optional, will use content preview if empty).'),
+            'slide_deck_url': _('URL to slide deck. Supports Google Slides, PowerPoint Online, SlideShare. Regular sharing URLs will be auto-converted to embed format.'),
+            'python_code': _('Python code examples that will be displayed with syntax highlighting'),
+            'scratch_image': _('Image to display in the Scratch tab (JPG, PNG, GIF supported)'),
         }
 
 

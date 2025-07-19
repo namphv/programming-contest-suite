@@ -82,7 +82,7 @@ class Organization(models.Model):
             total += sum(Submission.objects.filter(
                 result='AC',
                 case_points__gte=F('case_total'),
-                contest_object=contest).values_list('points', flat=True)
+                contest_object=contest).exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__').values_list('points', flat=True)
                 )
         self.performance_points = total
         self.save(update_fields=['performance_points'])
@@ -287,7 +287,7 @@ class Profile(models.Model):
     def calculate_points(self):
         from judge.models import Problem
         from judge.models import Submission
-        public_problems = Problem.objects.all()
+        public_problems = Problem.objects.all().exclude(code='__TUTORIAL_PYTHON_RUNNER__')
         data = (
             public_problems.filter(submission__user=self, submission__points__isnull=False, submission__result='AC')
                            .annotate(max_points=Max('submission__points')).order_by('-max_points')
@@ -302,6 +302,7 @@ class Profile(models.Model):
 
         latest_submission_ids = (
             Submission.objects.filter(user=self, result='AC', case_points__gte=F('case_total'))
+            .exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__')
             .values('problem', 'contest_object__organizations')
             .annotate(latest_id=Max('id'))).values('latest_id').distinct()
         latest_submissions = Submission.objects.filter(id__in=Subquery(latest_submission_ids))

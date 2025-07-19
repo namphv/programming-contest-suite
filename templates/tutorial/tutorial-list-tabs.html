@@ -1,0 +1,7 @@
+{% extends "tabs-base.html" %}
+
+{% block tabs %}
+    {% if request.user.is_authenticated %}
+        {{ make_tab('create', 'fa-plus', url('tutorial_new'), _('Create new tutorial')) }}
+    {% endif %}
+{% endblock %}

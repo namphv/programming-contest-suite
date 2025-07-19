@@ -383,6 +383,8 @@ class SubmissionsListBase(DiggPaginatorMixin, TitleMixin, ListView):
 
     def _get_queryset(self):
         queryset = Submission.objects.all()
+        # Filter out tutorial runner submissions
+        queryset = queryset.exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__')
         use_straight_join(queryset)
         queryset = submission_related(queryset.order_by('-id'))
         if self.show_problem:

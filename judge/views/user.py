@@ -34,7 +34,7 @@ from reversion import revisions
 
 from judge.forms import CustomAuthenticationForm, ProfileForm, UserBanForm, UserDownloadDataForm, UserForm, \
     newsletter_id
-from judge.models import BlogPost, Organization, Profile, Submission
+from judge.models import BlogPost, Organization, Profile, Submission, Tutorial
 from judge.models import Comment
 from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
@@ -52,7 +52,7 @@ from judge.views.blog import PostListBase
 from .contests import ContestRanking
 
 __all__ = ['UserPage', 'UserAboutPage', 'UserProblemsPage', 'UserCommentPage', 'UserDownloadData', 'UserPrepareData',
-           'users', 'edit_profile']
+           'UserBlogPage', 'UserTutorialPage', 'users', 'edit_profile']
 
 
 def remap_keys(iterable, mapping):
@@ -206,6 +206,7 @@ class UserAboutPage(UserPage):
 
         submissions = (
             self.object.submission_set
+            .exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__')
             .annotate(date_only=Cast(F('date') + timedelta(seconds=timezone_offset), DateField()))
             .values('date_only').annotate(cnt=Count('id'))
         )
@@ -216,6 +217,7 @@ class UserAboutPage(UserPage):
         context['submission_metadata'] = mark_safe(json.dumps({
             'min_year': (
                 self.object.submission_set
+                .exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__')
                 .annotate(year_only=ExtractYear('date'))
                 .aggregate(min_year=Min('year_only'))['min_year']
             ),
@@ -259,6 +261,25 @@ class UserBlogPage(CustomUserMixin, PostListBase):
             ).annotate(vote_score=Coalesce(F('my_vote__score'), Value(0)))
 
         return queryset.order_by('-sticky', '-publish_on').prefetch_related('authors__user')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context
+
+
+class UserTutorialPage(CustomUserMixin, DiggPaginatorMixin, ListView):
+    template_name = 'user/tutorials.html'
+    model = Tutorial
+    paginate_by = 10
+    context_object_name = 'tutorials'
+    
+    def get_queryset(self):
+        queryset = Tutorial.objects.filter(authors=self.user, organization=None)
+
+        if self.request.user != self.user.user and not self.request.user.is_superuser:
+            queryset = queryset.filter(visible=True, publish_on__lte=timezone.now())
+
+        return queryset.order_by('-publish_on').prefetch_related('authors__user')
 
 
 class UserCommentPage(CustomUserMixin, DiggPaginatorMixin, ListView):
@@ -315,6 +336,7 @@ class UserProblemsPage(UserPage):
 
         result = Submission.objects.filter(user=self.object, points__gt=0, problem__is_public=True,
                                            problem__is_organization_private=False) \
+            .exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__') \
             .exclude(problem__in=self.get_completed_problems() if self.hide_solved else []) \
             .values('problem__id', 'problem__code', 'problem__name', 'problem__points', 'problem__group__full_name') \
             .distinct().annotate(points=Max('points')).order_by('problem__group__full_name', 'problem__code')

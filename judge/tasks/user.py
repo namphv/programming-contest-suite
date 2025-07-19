@@ -50,7 +50,8 @@ def prepare_user_data(self, profile_id, options):
         # Force an update so that we get a progress bar.
         p.done = 0
         submissions = apply_submission_filter(
-            Submission.objects.select_related('problem', 'language', 'source').filter(user_id=profile_id),
+            Submission.objects.select_related('problem', 'language', 'source').filter(user_id=profile_id)
+            .exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__'),
             options,
         )
         p.did(1)

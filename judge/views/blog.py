@@ -142,8 +142,17 @@ class PostList(PostListBase):
     tab = 'home'
 
     def get_queryset(self):
+        # Handle tutorials view
+        if 'show_tutorials' in self.request.GET:
+            self.show_tutorials = self.request.session['show_tutorials'] = self.request.GET['show_tutorials'] == 'true'
+        else:
+            self.show_tutorials = self.request.session.get('show_tutorials', False)
+        
+        if self.show_tutorials:
+            # Return empty queryset for blogs since we're showing tutorials
+            return BlogPost.objects.none()
+        
         queryset = super(PostList, self).get_queryset()
-
         queryset = queryset.filter(organization=None)
 
         if 'show_all_blogs' in self.request.GET:
@@ -163,10 +172,33 @@ class PostList(PostListBase):
         context = super(PostList, self).get_context_data(**kwargs)
         context['first_page_href'] = reverse('home')
 
-        context['newsfeed_link'] = f"{reverse('home')}?show_all_blogs=false"
-        context['all_blogs_link'] = f"{reverse('home')}?show_all_blogs=true"
+        context['newsfeed_link'] = f"{reverse('home')}?show_all_blogs=false&show_tutorials=false"
+        context['all_blogs_link'] = f"{reverse('home')}?show_all_blogs=true&show_tutorials=false"
+        context['all_tutorials_link'] = f"{reverse('home')}?show_tutorials=true&show_all_blogs=false"
 
         context['show_all_blogs'] = self.show_all_blogs
+        context['show_tutorials'] = getattr(self, 'show_tutorials', False)
+        
+        # Add tutorial data when showing tutorials
+        if context['show_tutorials']:
+            from judge.models import Tutorial
+            from django.core.paginator import Paginator
+            
+            self.tab = 'tutorial_list'
+            tutorial_queryset = Tutorial.objects.filter(
+                visible=True, 
+                publish_on__lte=timezone.now(),
+                organization=None
+            ).prefetch_related('authors__user', 'authors__display_badge').order_by('-publish_on')
+            
+            # Paginate tutorials
+            paginator = Paginator(tutorial_queryset, self.paginate_by)
+            page_number = self.request.GET.get('page', 1)
+            tutorial_page = paginator.get_page(page_number)
+            
+            context['tutorials'] = tutorial_page.object_list
+            context['page_obj'] = tutorial_page  # Override page_obj for tutorials
+            context['title'] = _('Tutorials')  # Update title for tutorials
 
         context['page_prefix'] = reverse('blog_post_list')
         context['comments'] = Comment.most_recent(self.request.user, 10)

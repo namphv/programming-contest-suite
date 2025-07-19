@@ -22,6 +22,10 @@ class BlogMarkdownPreviewView(MarkdownPreviewView):
     template_name = 'blog/preview.html'
 
 
+class TutorialMarkdownPreviewView(MarkdownPreviewView):
+    template_name = 'tutorial/preview.html'
+
+
 class ContestMarkdownPreviewView(MarkdownPreviewView):
     template_name = 'contest/preview.html'
 

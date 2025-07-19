@@ -1,0 +1,46 @@
+{% set logged_in = request.user.is_authenticated %}
+{% set profile = request.profile if logged_in else None %}
+<section class="post" id="tutorial-{{ tutorial.id }}">
+    <div style="display: flex; gap: 0.5em;">
+        <div class="tutorial-icon">
+            <i class="fa fa-graduation-cap fa-2x" style="color: #4CAF50;"></i>
+        </div>
+        <div>
+            <h2 class="title">
+                <a href="{{ url('tutorial_detail', tutorial.id, tutorial.slug) }}">{% if not tutorial.visible %}<i class="fa fa-lock" style="color: red"></i> {% endif %}{{ tutorial.title }}</a>
+            </h2>
+            <span class="time">
+                {% with authors=tutorial.authors.all() %}
+                    {%- if authors -%}
+                        <span class="post-authors">{{ link_users(authors) }}</span>
+                    {%- endif -%}
+                {% endwith %}
+                {% with abs=_('published on {time}'), rel=_('published {time}') %}
+                    {{ relative_time(tutorial.publish_on, abs=abs, rel=rel) }}
+                {% endwith %}
+            </span>
+        </div>
+    </div>
+    <div class="summary content-description blog-body">
+        {% cache 86400 'tutorial_summary' tutorial.id %}
+            {{ tutorial.summary|default(tutorial.content, true)|markdown('tutorial', 'svg', lazy_load=True)|reference|str|safe }}
+        {% endcache %}
+        {%- if tutorial.summary -%}
+            <p><a href="{{ url('tutorial_detail', tutorial.id, tutorial.slug) }}">{{ _('Continue reading...') }}</a></p>
+        {%- endif -%}
+    </div>
+    <div class="meta">
+        <div class="time">
+            <i class="fa fa-user"></i>
+            {% with authors=tutorial.authors.all() %}
+                {%- if authors -%}
+                    {{ link_users(authors) }}
+                {%- endif -%}
+            {% endwith %}
+            <div style="float: right">
+                <i class="fa fa-clock-o"></i>
+                {{ relative_time(tutorial.publish_on, abs=_('o{time}'), rel=_('{time}')) -}}
+            </div>
+        </div>
+    </div>
+</section>

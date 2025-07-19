@@ -17,7 +17,7 @@ from judge.feed import AtomBlogFeed, AtomCommentFeed, AtomProblemFeed, BlogFeed,
 from judge.sitemap import sitemaps
 from judge.views import TitledTemplateView, api, blog, comment, contests, language, license, mailgun, organization, \
     preview, problem, problem_manage, ranked_submission, register, stats, status, submission, tag, tasks, ticket, \
-    two_factor, user, widgets
+    tutorial, two_factor, user, widgets
 from judge.views.problem_data import ProblemDataView, ProblemSubmissionDiff, \
     problem_data_file, problem_init_view
 from judge.views.register import ActivationView, RegistrationView
@@ -196,6 +196,7 @@ urlpatterns = [
         path('', user.UserAboutPage.as_view(), name='user_page'),
         path('/ban', user.UserBan.as_view(), name='user_ban'),
         path('/blog/', paged_list_view(user.UserBlogPage, 'user_blog')),
+        path('/tutorials/', paged_list_view(user.UserTutorialPage, 'user_tutorials')),
         path('/comment/', paged_list_view(user.UserCommentPage, 'user_comment')),
         path('/solved/', include([
             path('', user.UserProblemsPage.as_view(), name='user_problems'),
@@ -338,6 +339,20 @@ urlpatterns = [
         path('/', lambda _, id, slug: HttpResponsePermanentRedirect(reverse('blog_post', args=[id, slug]))),
     ])),
 
+    path('tutorials/', paged_list_view(tutorial.TutorialList, 'tutorial_list')),
+    path('tutorials/new', tutorial.TutorialCreate.as_view(), name='tutorial_new'),
+    path('tutorial/<int:id>-<slug:slug>', include([
+        path('', tutorial.TutorialView.as_view(), name='tutorial_detail'),
+        path('/edit', tutorial.TutorialEdit.as_view(), name='tutorial_edit'),
+        path('/', lambda _, id, slug: HttpResponsePermanentRedirect(reverse('tutorial_detail', args=[id, slug]))),
+    ])),
+    
+    # Tutorial code execution API
+    path('api/tutorial/', include([
+        path('run/', tutorial.TutorialRunCode.as_view(), name='tutorial_run_code'),
+        path('status/<int:submission_id>/', tutorial.TutorialExecutionStatus.as_view(), name='tutorial_execution_status'),
+    ])),
+
     path('license/<str:key>', license.LicenseDetail.as_view(), name='license'),
 
     path('mailgun/mail_activate/', mailgun.MailgunActivationView.as_view(), name='mailgun_activate'),
@@ -362,6 +377,7 @@ urlpatterns = [
             path('default', preview.DefaultMarkdownPreviewView.as_view(), name='default_preview'),
             path('problem', preview.ProblemMarkdownPreviewView.as_view(), name='problem_preview'),
             path('blog', preview.BlogMarkdownPreviewView.as_view(), name='blog_preview'),
+            path('tutorial', preview.TutorialMarkdownPreviewView.as_view(), name='tutorial_preview'),
             path('contest', preview.ContestMarkdownPreviewView.as_view(), name='contest_preview'),
             path('comment', preview.CommentMarkdownPreviewView.as_view(), name='comment_preview'),
             path('flatpage', preview.FlatPageMarkdownPreviewView.as_view(), name='flatpage_preview'),
@@ -458,3 +474,8 @@ try:
         exec(f.read(), globals())
 except IOError:
     pass
+
+# Serve media files during development
+if settings.DEBUG:
+    from django.conf.urls.static import static
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

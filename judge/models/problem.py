@@ -490,6 +490,9 @@ class Problem(models.Model):
 
     def update_stats(self):
         all_queryset = self.submission_set.filter(user__is_unlisted=False)
+        # Skip stats calculation for tutorial runner problem
+        if self.code == '__TUTORIAL_PYTHON_RUNNER__':
+            return
         ac_queryset = all_queryset.filter(points__gte=self.points, result='AC')
         self.user_count = ac_queryset.values('user').distinct().count()
         submissions = all_queryset.count()

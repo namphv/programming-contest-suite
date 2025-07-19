@@ -29,7 +29,7 @@
 {% endblock %}
 
 {% block title_row %}
-    {% set tab = 'blogs' %}
+    {% set tab = 'tutorials' %}
     {% include "user/user-tabs.html" %}
 {% endblock %}
 
@@ -40,13 +40,13 @@
     <div id="blog-container">
         <div class="blog-content sidebox">
             <div class="sidebox-content" style="border: unset;">
-                {% if posts %}
-                    {% for post in posts %}
-                        {% include "blog/blog-post.html" %}
+                {% if tutorials %}
+                    {% for tutorial in tutorials %}
+                        {% include "tutorial/tutorial-post.html" %}
                     {% endfor %}
                 {% else %}
                     <div class="empty-content">
-                        <p>{{ _('No blog posts published yet.') }}</p>
+                        <p>{{ _('No tutorials published yet.') }}</p>
                     </div>
                 {% endif %}
             </div>
@@ -54,6 +54,7 @@
                 <div class="bottom-pagination-bar">{% include "list-pages.html" %}</div>
             {% endif %}
         </div>
+    </div>
     {% block after_posts %}{% endblock %}
 {% endblock %}
 

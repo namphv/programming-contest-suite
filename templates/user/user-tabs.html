@@ -1,13 +1,15 @@
 {% extends "tabs-base.html" %}
 
 {% block tabs %}
-    {% if user.user == request.user and not request.official_contest_mode %}
-        {{ make_tab('create', 'fa-plus', url('blog_post_new'), _('Create new blog post')) }}
-    {% endif %}
     {{ make_tab('about', 'fa-info-circle', url('user_page', user.user.username), _('About')) }}
-    {{ make_tab('problems', 'fa-puzzle-piece', url('user_problems', user.user.username), _('Statistics')) }}
+    {{ make_tab('problems', 'fa-puzzle-piece', url('user_problems', user.user.username), _('Stats')) }}
     {% if not request.official_contest_mode %}
         {{ make_tab('blogs', 'fa-rss', url('user_blog', user.user.username), _('Blogs')) }}
+        {{ make_tab('tutorials', 'fa-graduation-cap', url('user_tutorials', user.user.username), _('Tuts')) }}
+    {% endif %}
+    {% if user.user == request.user and not request.official_contest_mode %}
+        {{ make_tab('new_blog', 'fa-plus', url('blog_post_new'), _('+Blog')) }}
+        {{ make_tab('new_tutorial', 'fa-plus', url('tutorial_new'), _('+Tut')) }}
     {% endif %}
     {% if request.user.is_superuser %}
         {{ make_tab('comments', 'fa-comments', url('user_comment', user.user.username), _('Comments')) }}

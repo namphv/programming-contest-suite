@@ -42,17 +42,20 @@ class RankedSubmissions(ProblemSubmissions):
                 FROM (
                     SELECT sub.user_id AS uid, MAX(sub.points) AS points
                     FROM judge_submission AS sub {contest_join}
-                    WHERE sub.problem_id = %s AND {points} > 0 {constraint}
+                    INNER JOIN judge_problem AS prob ON sub.problem_id = prob.id
+                    WHERE sub.problem_id = %s AND {points} > 0 AND prob.code != '__TUTORIAL_PYTHON_RUNNER__' {constraint}
                     GROUP BY sub.user_id
                 ) AS highscore STRAIGHT_JOIN (
                     SELECT sub.user_id AS uid, sub.points, MIN(sub.time) as time
                     FROM judge_submission AS sub {contest_join}
-                    WHERE sub.problem_id = %s AND {points} > 0 {constraint}
+                    INNER JOIN judge_problem AS prob ON sub.problem_id = prob.id
+                    WHERE sub.problem_id = %s AND {points} > 0 AND prob.code != '__TUTORIAL_PYTHON_RUNNER__' {constraint}
                     GROUP BY sub.user_id, {points}
                 ) AS fastest ON (highscore.uid = fastest.uid AND highscore.points = fastest.points)
                     STRAIGHT_JOIN judge_submission AS sub
                         ON (sub.user_id = fastest.uid AND sub.time = fastest.time)
-                WHERE sub.problem_id = %s {constraint}
+                    INNER JOIN judge_problem AS prob ON sub.problem_id = prob.id
+                WHERE sub.problem_id = %s AND prob.code != '__TUTORIAL_PYTHON_RUNNER__' {constraint}
                 GROUP BY sub.user_id
             """.format(points=points, contest_join=contest_join, constraint=constraint),
             params=params * 3, alias='best_subs', join_fields=[('id', 'id')], related_model=Submission,
