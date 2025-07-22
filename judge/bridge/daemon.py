@@ -15,8 +15,9 @@ logger = logging.getLogger('judge.bridge')
 
 
 def reset_judges():
+    logger.info('iniadasdasdas')
     Judge.objects.update(online=False, ping=None, load=None)
-
+    logger.info('adasdasdasdasd')
 
 def judge_daemon():
     logger.info('start')
