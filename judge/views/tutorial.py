@@ -255,145 +255,28 @@ class TutorialRunCode(View):
             # Generate execution ID for real-time tracking
             execution_id = str(uuid.uuid4())
             
-            # Check if there are any online judges available
-            from judge.models import Judge
-            online_judges = Judge.objects.filter(online=True).count()
+            # Use judge server like regular submissions
+            from judge.judgeapi import judge_submission
             
-            if online_judges == 0:
-                # No judges available, use local execution
-                print("No judges available, using local execution")
-                
-                # Execute Python code locally and capture output
-                try:
-                    import subprocess
-                    import tempfile
-                    import os
-                    import time
-                    
-                    # Create a temporary file for the code
-                    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-                        f.write(code)
-                        temp_file = f.name
-                    
-                    try:
-                        # Execute the code with a timeout
-                        start_time = time.time()
-                        result = subprocess.run(
-                            ['python3', temp_file],
-                            capture_output=True,
-                            text=True,
-                            timeout=5,  # 5 second timeout for safety
-                            cwd='/tmp'  # Safe working directory
-                        )
-                        execution_time = time.time() - start_time
-                        
-                        # Clean up the temporary file
-                        os.unlink(temp_file)
-                        
-                        # Determine the result
-                        if result.returncode == 0:
-                            # Successful execution
-                            output = result.stdout
-                            if result.stderr:
-                                output += "\n--- Warnings ---\n" + result.stderr
-                            
-                            submission.status = 'D'  # Done
-                            submission.result = 'AC'  # Accepted
-                            submission.time = execution_time
-                            submission.memory = 1024  # Mock memory usage
-                            submission.points = 0
-                            submission.error = output  # Store output in error field for now
-                            submission.save()
-                            
-                            return JsonResponse({
-                                'success': True,
-                                'submission_id': submission.id,
-                                'execution_id': execution_id,
-                                'message': 'Code executed successfully'
-                            })
-                        else:
-                            # Runtime error
-                            error_output = result.stderr or result.stdout or 'Unknown error'
-                            
-                            submission.status = 'D'  # Done
-                            submission.result = 'RTE'  # Runtime Error
-                            submission.time = execution_time
-                            submission.memory = 1024
-                            submission.points = 0
-                            submission.error = error_output
-                            submission.save()
-                            
-                            return JsonResponse({
-                                'success': True,
-                                'submission_id': submission.id,
-                                'execution_id': execution_id,
-                                'message': 'Code executed with errors'
-                            })
-                            
-                    except subprocess.TimeoutExpired:
-                        # Clean up the temporary file
-                        os.unlink(temp_file)
-                        
-                        # Time limit exceeded
-                        submission.status = 'D'  # Done
-                        submission.result = 'TLE'  # Time Limit Exceeded
-                        submission.time = 5.0
-                        submission.memory = 1024
-                        submission.points = 0
-                        submission.error = 'Time limit exceeded (5 seconds)'
-                        submission.save()
-                        
-                        return JsonResponse({
-                            'success': True,
-                            'submission_id': submission.id,
-                            'execution_id': execution_id,
-                            'message': 'Code execution timed out'
-                        })
-                        
-                    except Exception as exec_error:
-                        # Clean up the temporary file if it exists
-                        if os.path.exists(temp_file):
-                            os.unlink(temp_file)
-                        raise exec_error
-                        
-                except SyntaxError as syntax_error:
-                    # Handle syntax errors
-                    submission.status = 'D'  # Done
-                    submission.result = 'CE'  # Compile Error
-                    submission.time = 0
-                    submission.memory = 0
-                    submission.points = 0
-                    submission.error = str(syntax_error)
-                    submission.save()
-                    
-                    return JsonResponse({
-                        'success': True,
-                        'submission_id': submission.id,
-                        'execution_id': execution_id,
-                        'message': 'Code has syntax errors'
-                    })
-                
-                except Exception as exec_error:
-                    # Clean up on failure
-                    submission.delete()
-                    return JsonResponse({'error': f'Execution failed: {str(exec_error)}'}, status=500)
-            
-            else:
-                # Judges available, use real execution
-                try:
-                    judge_submission(submission, rejudge=False, batch_rejudge=False, judge_id=None)
-                    
+            # Submit to judge server (same as regular submissions)
+            try:
+                judge_result = judge_submission(submission)
+                if judge_result:
+                    # Successfully submitted to judge server
                     return JsonResponse({
                         'success': True,
                         'submission_id': submission.id,
                         'execution_id': execution_id,
                         'message': 'Code submitted for execution'
                     })
+                else:
+                    # Failed to submit to judge server
+                    return JsonResponse({'error': 'Failed to submit to judge server'}, status=500)
                     
-                except Exception as e:
-                    # Clean up on failure
-                    submission.delete()
-                    return JsonResponse({'error': f'Execution failed: {str(e)}'}, status=500)
+            except Exception as e:
+                # Clean up on failure and return error
+                submission.delete()
+                return JsonResponse({'error': f'Execution failed: {str(e)}'}, status=500)
                 
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
