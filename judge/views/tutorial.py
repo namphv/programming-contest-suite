@@ -215,19 +215,21 @@ class TutorialRunCode(View):
                 defaults={'full_name': 'System Problems'}
             )
             
-            # Create a virtual "tutorial runner" problem if it doesn't exist
-            tutorial_problem, created = Problem.objects.get_or_create(
-                code='__TUTORIAL_PYTHON_RUNNER__',
-                defaults={
-                    'name': 'Tutorial Python Runner (Internal)',
-                    'description': 'Virtual problem for tutorial code execution',
-                    'points': 0,
-                    'time_limit': 2.0,  # 2 second limit for tutorials
-                    'memory_limit': 64000,  # 64MB limit
-                    'is_public': False,
-                    'is_manually_managed': True,
-                    'group': default_group,
-                }
+            # Generate unique execution ID for this tutorial run (short version to fit db limit)
+            execution_id = str(uuid.uuid4())[:8]  # Use first 8 chars of UUID
+            tutorial_code = f'__TUT_{execution_id}__'
+            
+            # Create a unique tutorial problem for this execution
+            tutorial_problem = Problem.objects.create(
+                code=tutorial_code,
+                name=f'Tutorial Execution {execution_id[:8]}',
+                description='Temporary problem for tutorial code execution',
+                points=0,
+                time_limit=2.0,  # 2 second limit for tutorials
+                memory_limit=64000,  # 64MB limit
+                is_public=False,
+                is_manually_managed=True,
+                group=default_group,
             )
             
             # Create submission for tutorial execution
@@ -252,14 +254,39 @@ class TutorialRunCode(View):
             )
             source.save()
             
-            # Generate execution ID for real-time tracking
-            execution_id = str(uuid.uuid4())
+            # Create problem directory and files for judge server
+            import os
+            import tempfile
+            from django.conf import settings
             
-            # Use judge server like regular submissions
-            from judge.judgeapi import judge_submission
-            
-            # Submit to judge server (same as regular submissions)
             try:
+                # Get problems directory path (adjust based on your setup)
+                problems_dir = getattr(settings, 'DMOJ_PROBLEM_DATA_ROOT', '/home/pham_nam/program/problems/')
+                tutorial_dir = os.path.join(problems_dir, tutorial_code)
+                
+                # Create tutorial problem directory
+                os.makedirs(tutorial_dir, exist_ok=True)
+                
+                # Create minimal problem configuration
+                init_content = f"""archive: {tutorial_code}.zip
+test_cases:
+- {{in: input.in, out: output.out, points: 100}}"""
+                
+                with open(os.path.join(tutorial_dir, 'init.yml'), 'w') as f:
+                    f.write(init_content)
+                
+                # Create input file (empty for code execution)
+                with open(os.path.join(tutorial_dir, 'input.in'), 'w') as f:
+                    f.write('')
+                
+                # Create expected output file (we'll check output dynamically)
+                with open(os.path.join(tutorial_dir, 'output.out'), 'w') as f:
+                    f.write('')
+                
+                # Use judge server like regular submissions
+                from judge.judgeapi import judge_submission
+                
+                # Submit to judge server (same as regular submissions)
                 judge_result = judge_submission(submission)
                 if judge_result:
                     # Successfully submitted to judge server
@@ -271,11 +298,18 @@ class TutorialRunCode(View):
                     })
                 else:
                     # Failed to submit to judge server
-                    return JsonResponse({'error': 'Failed to submit to judge server'}, status=500)
+                    raise Exception('Failed to submit to judge server')
                     
             except Exception as e:
-                # Clean up on failure and return error
-                submission.delete()
+                # Clean up on failure
+                try:
+                    if 'tutorial_dir' in locals() and os.path.exists(tutorial_dir):
+                        import shutil
+                        shutil.rmtree(tutorial_dir)
+                    submission.delete()
+                    tutorial_problem.delete()
+                except:
+                    pass
                 return JsonResponse({'error': f'Execution failed: {str(e)}'}, status=500)
                 
         except json.JSONDecodeError:
@@ -297,7 +331,7 @@ class TutorialExecutionStatus(View):
             submission = Submission.objects.get(
                 id=submission_id,
                 user=request.user.profile,
-                problem__code='__TUTORIAL_PYTHON_RUNNER__'
+                problem__code__startswith='__TUT_'
             )
             
             response_data = {
@@ -344,6 +378,26 @@ class TutorialExecutionStatus(View):
                 except Exception:
                     response_data['output'] = 'Error retrieving execution output'
                     response_data['success'] = False
+                
+                # Clean up tutorial problem and directory after execution is complete
+                try:
+                    import os
+                    import shutil
+                    from django.conf import settings
+                    
+                    problems_dir = getattr(settings, 'DMOJ_PROBLEM_DATA_ROOT', '/home/pham_nam/program/problems/')
+                    tutorial_dir = os.path.join(problems_dir, submission.problem.code)
+                    
+                    if os.path.exists(tutorial_dir):
+                        shutil.rmtree(tutorial_dir)
+                    
+                    # Clean up database entries (but keep submission for history)
+                    submission.problem.delete()
+                    
+                except Exception:
+                    # If cleanup fails, don't affect the response
+                    pass
+                    
             else:
                 response_data['output'] = 'Execution in progress...'
                 response_data['success'] = None
