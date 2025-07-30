@@ -106,7 +106,7 @@
             <button type="submit" class="btn btn-danger">
                 <i class="fa fa-trash"></i> {{ _('Delete Tutorial') }}
             </button>
-            <a href="{{ object.get_absolute_url }}" class="btn btn-secondary">
+            <a href="{{ object.get_absolute_url() }}" class="btn btn-secondary">
                 <i class="fa fa-arrow-left"></i> {{ _('Cancel') }}
             </a>
         </div>

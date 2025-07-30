@@ -38,7 +38,7 @@ def execute_tutorial_code(request):
             ],
             "stdin": input_data,
             "compile_timeout": 10000,
-            "run_timeout": 60000,
+            "run_timeout": 3000,
             "compile_memory_limit": -1,
             "run_memory_limit": -1
         }
@@ -49,7 +49,7 @@ def execute_tutorial_code(request):
             json=piston_payload,
             timeout=70  # Allow extra time for 60s execution + network overhead
         )
-        
+
         if response.status_code != 200:
             return JsonResponse({
                 'success': False,
