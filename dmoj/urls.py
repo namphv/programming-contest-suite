@@ -17,7 +17,7 @@ from judge.feed import AtomBlogFeed, AtomCommentFeed, AtomProblemFeed, BlogFeed,
 from judge.sitemap import sitemaps
 from judge.views import TitledTemplateView, api, blog, comment, contests, language, license, mailgun, organization, \
     preview, problem, problem_manage, ranked_submission, register, stats, status, submission, tag, tasks, ticket, \
-    tutorial, two_factor, user, widgets
+    tutorial, tutorial_runner, two_factor, user, widgets
 from judge.views.problem_data import ProblemDataView, ProblemSubmissionDiff, \
     problem_data_file, problem_init_view
 from judge.views.register import ActivationView, RegistrationView
@@ -344,13 +344,14 @@ urlpatterns = [
     path('tutorial/<int:id>-<slug:slug>', include([
         path('', tutorial.TutorialView.as_view(), name='tutorial_detail'),
         path('/edit', tutorial.TutorialEdit.as_view(), name='tutorial_edit'),
+        path('/delete', tutorial.TutorialDelete.as_view(), name='tutorial_delete'),
         path('/', lambda _, id, slug: HttpResponsePermanentRedirect(reverse('tutorial_detail', args=[id, slug]))),
     ])),
     
-    # Tutorial code execution API
+    # Tutorial code execution API (Piston-based)
     path('api/tutorial/', include([
-        path('run/', tutorial.TutorialRunCode.as_view(), name='tutorial_run_code'),
-        path('status/<int:submission_id>/', tutorial.TutorialExecutionStatus.as_view(), name='tutorial_execution_status'),
+        path('run/', tutorial_runner.execute_tutorial_code, name='tutorial_run_code'),
+        path('health/', tutorial_runner.tutorial_runner_health, name='tutorial_runner_health'),
     ])),
 
     path('license/<str:key>', license.LicenseDetail.as_view(), name='license'),

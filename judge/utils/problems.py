@@ -35,16 +35,14 @@ def user_completed_ids(profile):
     result = cache.get(key)
     if result is None:
         result = set(Submission.objects.filter(user=profile, result='AC', case_points__gte=F('case_total'))
-                     .exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__')
-                     .values_list('problem_id', flat=True).distinct())
+                                          .values_list('problem_id', flat=True).distinct())
         cache.set(key, result, 86400)
     return result
 
 
 def contest_user_completed_ids(profile, contest):
     result = set(Submission.objects.filter(user=profile, result='AC', case_points__gte=F('case_total'), contest_object=contest)
-                    .exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__')
-                    .values_list('problem_id', flat=True).distinct())
+                                        .values_list('problem_id', flat=True).distinct())
     return result
 
 
@@ -61,16 +59,14 @@ def user_attempted_ids(profile):
     key = 'user_attempted:%s' % profile.id
     result = cache.get(key)
     if result is None:
-        result = set(profile.submission_set.exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__')
-                     .values_list('problem_id', flat=True).distinct())
+        result = set(profile.submission_set                     .values_list('problem_id', flat=True).distinct())
         cache.set(key, result, 86400)
     return result
 
 
 def contest_user_attempted_ids(profile, contest):
     result = set(profile.submission_set.filter(contest_object=contest)
-                 .exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__')
-                 .values_list('problem_id', flat=True).distinct())
+                                  .values_list('problem_id', flat=True).distinct())
     return result
 
 
@@ -97,8 +93,6 @@ def get_result_data(*args, **kwargs):
             raise ValueError("Can't pass both queryset and keyword filters")
     else:
         submissions = Submission.objects.filter(**kwargs) if kwargs is not None else Submission.objects
-    # Filter out tutorial runner submissions
-    submissions = submissions.exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__')
     raw = submissions.values('result').annotate(count=Count('result')).values_list('result', 'count')
     return _get_result_data(defaultdict(int, raw))
 
@@ -108,8 +102,7 @@ def hot_problems(duration, limit):
     qs = cache.get(cache_key)
     if qs is None:
         qs = Problem.get_public_problems() \
-                    .filter(submission__date__gt=timezone.now() - duration, points__gt=0) \
-                    .exclude(code='__TUTORIAL_PYTHON_RUNNER__')
+                    .filter(submission__date__gt=timezone.now() - duration, points__gt=0)
         qs0 = qs.annotate(k=Count('submission__user', distinct=True)).order_by('-k').values_list('k', flat=True)
 
         if not qs0:

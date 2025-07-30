@@ -520,7 +520,6 @@ class APIUserDetail(APIDetailView):
                 problem__is_public=True,
                 problem__is_organization_private=False,
             )
-            .exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__')
             .values('problem').distinct()
             .values_list('problem__code', flat=True),
         )
@@ -580,7 +579,7 @@ class APISubmissionList(APIListView):
         return not self.used_basic_filters
 
     def get_unfiltered_queryset(self):
-        queryset = Submission.objects.all().exclude(problem__code='__TUTORIAL_PYTHON_RUNNER__')
+        queryset = Submission.objects.all()
         use_straight_join(queryset)
         join_sql_subquery(
             queryset,

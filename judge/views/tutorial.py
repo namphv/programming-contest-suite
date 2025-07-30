@@ -1,26 +1,16 @@
-import uuid
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import FilteredRelation, Max, Q
-from django.db.models.expressions import F, Value
-from django.db.models.functions import Coalesce
-from django.http import Http404, HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
-from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import CreateView, ListView, UpdateView, View
+from django.views.generic import CreateView, ListView, UpdateView, DetailView, DeleteView
 from reversion import revisions
 
-from django.views.generic import DetailView
 from judge.forms import TutorialForm
-from judge.judgeapi import abort_submission, judge_submission
-from judge.models import Contest, Language, Problem, Profile, Submission, SubmissionSource, Ticket, Tutorial
+from judge.models import Tutorial
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.opengraph import generate_opengraph
-from judge.utils.tickets import filter_visible_tickets
 from judge.utils.views import TitleMixin, generic_message
 
 
@@ -180,231 +170,24 @@ class TutorialEdit(TutorialMixin, TitleMixin, UpdateView):
         return super().dispatch(request, *args, **kwargs)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
-class TutorialRunCode(View):
-    """
-    API endpoint for executing Python code in tutorials.
-    Leverages the existing judge system for secure execution.
-    """
-    
-    def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse({'error': 'Authentication required'}, status=401)
-            
-        try:
-            import json
-            data = json.loads(request.body)
-            code = data.get('code', '').strip()
-            
-            if not code:
-                return JsonResponse({'error': 'No code provided'}, status=400)
-            
-            if len(code) > 65536:  # Same limit as regular submissions
-                return JsonResponse({'error': 'Code too long'}, status=400)
-                
-            # Get Python language
-            try:
-                python_lang = Language.objects.get(key='PY3')
-            except Language.DoesNotExist:
-                return JsonResponse({'error': 'Python language not available'}, status=500)
-            
-            # Get or create default problem group
-            from judge.models import ProblemGroup
-            default_group, created = ProblemGroup.objects.get_or_create(
-                name='System Problems',
-                defaults={'full_name': 'System Problems'}
-            )
-            
-            # Generate unique execution ID for this tutorial run (short version to fit db limit)
-            execution_id = str(uuid.uuid4())[:8]  # Use first 8 chars of UUID
-            tutorial_code = f'__TUT_{execution_id}__'
-            
-            # Create a unique tutorial problem for this execution
-            tutorial_problem = Problem.objects.create(
-                code=tutorial_code,
-                name=f'Tutorial Execution {execution_id[:8]}',
-                description='Temporary problem for tutorial code execution',
-                points=0,
-                time_limit=2.0,  # 2 second limit for tutorials
-                memory_limit=64000,  # 64MB limit
-                is_public=False,
-                is_manually_managed=True,
-                group=default_group,
-            )
-            
-            # Create submission for tutorial execution
-            submission = Submission(
-                user=request.user.profile,  # Use Profile, not User
-                problem=tutorial_problem,
-                language=python_lang,
-                # Don't set time here, let auto_now_add handle it
-                case_points=0,
-                case_total=0,
-                points=0,
-                result='QU',  # Queued
-                status='QU',
-                current_testcase=0
-            )
-            submission.save()
-            
-            # Create submission source
-            source = SubmissionSource(
-                submission=submission,
-                source=code
-            )
-            source.save()
-            
-            # Create problem directory and files for judge server
-            import os
-            import tempfile
-            from django.conf import settings
-            
-            try:
-                # Get problems directory path (adjust based on your setup)
-                problems_dir = getattr(settings, 'DMOJ_PROBLEM_DATA_ROOT', '/home/pham_nam/program/problems/')
-                tutorial_dir = os.path.join(problems_dir, tutorial_code)
-                
-                # Create tutorial problem directory
-                os.makedirs(tutorial_dir, exist_ok=True)
-                
-                # Create minimal problem configuration
-                init_content = f"""archive: {tutorial_code}.zip
-test_cases:
-- {{in: input.in, out: output.out, points: 100}}"""
-                
-                with open(os.path.join(tutorial_dir, 'init.yml'), 'w') as f:
-                    f.write(init_content)
-                
-                # Create input file (empty for code execution)
-                with open(os.path.join(tutorial_dir, 'input.in'), 'w') as f:
-                    f.write('')
-                
-                # Create expected output file (we'll check output dynamically)
-                with open(os.path.join(tutorial_dir, 'output.out'), 'w') as f:
-                    f.write('')
-                
-                # Use judge server like regular submissions
-                from judge.judgeapi import judge_submission
-                
-                # Submit to judge server (same as regular submissions)
-                judge_result = judge_submission(submission)
-                if judge_result:
-                    # Successfully submitted to judge server
-                    return JsonResponse({
-                        'success': True,
-                        'submission_id': submission.id,
-                        'execution_id': execution_id,
-                        'message': 'Code submitted for execution'
-                    })
-                else:
-                    # Failed to submit to judge server
-                    raise Exception('Failed to submit to judge server')
-                    
-            except Exception as e:
-                # Clean up on failure
-                try:
-                    if 'tutorial_dir' in locals() and os.path.exists(tutorial_dir):
-                        import shutil
-                        shutil.rmtree(tutorial_dir)
-                    submission.delete()
-                    tutorial_problem.delete()
-                except:
-                    pass
-                return JsonResponse({'error': f'Execution failed: {str(e)}'}, status=500)
-                
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': f'Internal error: {str(e)}'}, status=500)
+class TutorialDelete(TutorialMixin, TitleMixin, DeleteView):
+    model = Tutorial
+    template_name = 'tutorial/delete.html'
+
+    def get_title(self):
+        return _('Delete tutorial: %s') % self.object.title
+
+    def get_content_title(self):
+        return _('Delete tutorial: %s') % self.object.title
+
+    def get_success_url(self):
+        return reverse('tutorial_list')
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.official_contest_mode and not request.user.is_superuser:
+            return generic_message(request, _('Permission denied'),
+                                   _('You cannot delete tutorial.'))
+        return super().dispatch(request, *args, **kwargs)
 
 
-class TutorialExecutionStatus(View):
-    """
-    API endpoint to check the status of tutorial code execution.
-    """
-    
-    def get(self, request, submission_id):
-        if not request.user.is_authenticated:
-            return JsonResponse({'error': 'Authentication required'}, status=401)
-            
-        try:
-            submission = Submission.objects.get(
-                id=submission_id,
-                user=request.user.profile,
-                problem__code__startswith='__TUT_'
-            )
-            
-            response_data = {
-                'status': submission.status,
-                'result': submission.result,
-                'time': submission.time_memory.time if hasattr(submission, 'time_memory') and submission.time_memory else None,
-                'memory': submission.time_memory.memory if hasattr(submission, 'time_memory') and submission.time_memory else None,
-            }
-            
-            # Add output if execution is complete
-            if submission.status in ['D', 'IE', 'CE', 'AB']:  # Done, Internal Error, Compile Error, Aborted
-                try:
-                    # Get the submission source and any error messages
-                    if hasattr(submission, 'submission_source'):
-                        source = submission.submission_source.source
-                        response_data['source'] = source
-                        
-                    # For tutorial execution, provide the actual output
-                    if submission.result == 'AC':
-                        # For successful execution, show the actual output
-                        output = submission.error if submission.error else 'Code executed successfully with no output'
-                        response_data['output'] = output
-                        response_data['success'] = True
-                    elif submission.result == 'CE':
-                        error_msg = submission.error if submission.error else 'Syntax error in code'
-                        response_data['output'] = f'Syntax Error:\n{error_msg}'
-                        response_data['success'] = False
-                    elif submission.result == 'TLE':
-                        error_msg = submission.error if submission.error else 'Time Limit Exceeded (5 seconds)'
-                        response_data['output'] = error_msg
-                        response_data['success'] = False
-                    elif submission.result == 'MLE':
-                        error_msg = submission.error if submission.error else 'Memory Limit Exceeded'
-                        response_data['output'] = error_msg
-                        response_data['success'] = False
-                    elif submission.result == 'RTE':
-                        error_msg = submission.error if submission.error else 'Runtime Error'
-                        response_data['output'] = f'Runtime Error:\n{error_msg}'
-                        response_data['success'] = False
-                    else:
-                        response_data['output'] = f'Execution result: {submission.result}'
-                        response_data['success'] = submission.result == 'AC'
-                        
-                except Exception:
-                    response_data['output'] = 'Error retrieving execution output'
-                    response_data['success'] = False
-                
-                # Clean up tutorial problem and directory after execution is complete
-                try:
-                    import os
-                    import shutil
-                    from django.conf import settings
-                    
-                    problems_dir = getattr(settings, 'DMOJ_PROBLEM_DATA_ROOT', '/home/pham_nam/program/problems/')
-                    tutorial_dir = os.path.join(problems_dir, submission.problem.code)
-                    
-                    if os.path.exists(tutorial_dir):
-                        shutil.rmtree(tutorial_dir)
-                    
-                    # Clean up database entries (but keep submission for history)
-                    submission.problem.delete()
-                    
-                except Exception:
-                    # If cleanup fails, don't affect the response
-                    pass
-                    
-            else:
-                response_data['output'] = 'Execution in progress...'
-                response_data['success'] = None
-            
-            return JsonResponse(response_data)
-            
-        except Submission.DoesNotExist:
-            return JsonResponse({'error': 'Submission not found'}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': f'Error checking status: {str(e)}'}, status=500)
+# Legacy code execution classes removed - use tutorial_runner.py with Piston API instead

@@ -217,7 +217,11 @@
             </span>
         {% endif %}
         {% if tutorial.is_editable_by(request.user) %}
-            <div class="title-line-action">[<a href="{{ url('tutorial_edit', tutorial.id, tutorial.slug) }}">{{ _('Edit') }}</a>]</div>
+            <div class="title-line-action">
+                [<a href="{{ url('tutorial_edit', tutorial.id, tutorial.slug) }}">{{ _('Edit') }}</a>]
+                [<a href="{{ url('tutorial_delete', tutorial.id, tutorial.slug) }}" style="color: #dc3545;" 
+                   onclick="return confirm('{{ _('Are you sure you want to delete this tutorial? This action cannot be undone.') }}')">{{ _('Delete') }}</a>]
+            </div>
         {% endif %}
         <div class="time">
             {% with authors=tutorial.authors.all() %}
@@ -253,7 +257,7 @@
                     <i class="fa fa-slideshare"></i> {{ _('Presentation Slides') }}
                 </h3>
                 <div class="tutorial-section-content">
-                    <div class="slide-container" style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                    <div class="slide-container" style="position: relative; padding-bottom: 42.19%; height: 0; overflow: hidden; max-width: 800px; margin: 0 auto;">
                         <iframe src="{{ tutorial.slide_deck_url }}" 
                                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 1px solid #ddd; border-radius: 4px;"
                                 frameborder="0" 
@@ -372,8 +376,6 @@
     <script>
         // Initialize ACE Editors
         let tutorialPythonEditor;
-        let currentSubmissionId = null;
-        let statusCheckInterval = null;
         let currentTab = 'python';
         
         document.addEventListener('DOMContentLoaded', function() {
@@ -468,11 +470,11 @@ for i in range(3):
             resultsDiv.style.display = 'block';
             
             // Update status
-            document.getElementById('result-status').innerHTML = '<i class="fa fa-spinner fa-spin"></i> {{ _("Submitting code for execution...") }}';
+            document.getElementById('result-status').innerHTML = '<i class="fa fa-spinner fa-spin"></i> {{ _("Executing code...") }}';
             document.getElementById('result-output').innerHTML = '';
             document.getElementById('result-timing').innerHTML = '';
             
-            // Send code to backend
+            // Send code to backend (new Piston-based API)
             fetch('/api/tutorial/run/', {
                 method: 'POST',
                 headers: {
@@ -482,13 +484,41 @@ for i in range(3):
             })
             .then(response => response.json())
             .then(data => {
+                // Re-enable run button
+                runBtn.disabled = false;
+                runBtn.innerHTML = '<i class="fa fa-play"></i> {{ _("Run Code") }}';
+                
                 if (data.success) {
-                    currentSubmissionId = data.submission_id;
-                    document.getElementById('result-status').innerHTML = '<i class="fa fa-clock-o"></i> {{ _("Code submitted. Waiting for execution...") }}';
+                    // Execution successful
+                    document.getElementById('result-status').innerHTML = '<i class="fa fa-check-circle" style="color: green;"></i> {{ _("Execution completed successfully") }}';
                     
-                    // Start polling for status
-                    startStatusPolling();
+                    // Display output
+                    const output = data.output || '{{ _("No output") }}';
+                    const error = data.error || '';
+                    
+                    let outputHtml = '';
+                    if (output.trim()) {
+                        outputHtml += `<div><strong>{{ _("Output:") }}</strong></div><pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; color: #2d3748; margin-bottom: 10px;">${escapeHtml(output)}</pre>`;
+                    }
+                    if (error.trim()) {
+                        outputHtml += `<div><strong>{{ _("Errors:") }}</strong></div><pre style="background: #fff3cd; padding: 10px; border-radius: 4px; color: #856404;">${escapeHtml(error)}</pre>`;
+                    }
+                    if (!output.trim() && !error.trim()) {
+                        outputHtml = `<pre style="background: #f8f9fa; padding: 10px; border-radius: 4px;">${'{{ _("No output") }}'}</pre>`;
+                    }
+                    
+                    document.getElementById('result-output').innerHTML = outputHtml;
+                    
+                    // Show execution info
+                    let executionInfo = [];
+                    if (data.code !== undefined) {
+                        executionInfo.push(`{{ _("Exit code") }}: ${data.code}`);
+                    }
+                    if (executionInfo.length > 0) {
+                        document.getElementById('result-timing').innerHTML = `<small class="text-muted">${executionInfo.join(' | ')}</small>`;
+                    }
                 } else {
+                    // Execution failed
                     handleExecutionError(data.error || 'Unknown error');
                 }
             })
@@ -497,64 +527,6 @@ for i in range(3):
             });
         }
         
-        function startStatusPolling() {
-            if (statusCheckInterval) {
-                clearInterval(statusCheckInterval);
-            }
-            
-            statusCheckInterval = setInterval(() => {
-                if (currentSubmissionId) {
-                    checkExecutionStatus();
-                }
-            }, 1000); // Check every second
-        }
-        
-        function checkExecutionStatus() {
-            fetch(`/api/tutorial/status/${currentSubmissionId}/`)
-            .then(response => response.json())
-            .then(data => {
-                const statusEl = document.getElementById('result-status');
-                const outputEl = document.getElementById('result-output');
-                const timingEl = document.getElementById('result-timing');
-                
-                if (data.status === 'D' || data.status === 'IE' || data.status === 'CE' || data.status === 'AB') {
-                    // Execution completed
-                    clearInterval(statusCheckInterval);
-                    statusCheckInterval = null;
-                    
-                    // Re-enable run button
-                    const runBtn = document.getElementById('run-interactive-btn');
-                    runBtn.disabled = false;
-                    runBtn.innerHTML = '<i class="fa fa-play"></i> {{ _("Run Code") }}';
-                    
-                    // Display results based on execution outcome
-                    if (data.success === true) {
-                        statusEl.innerHTML = '<i class="fa fa-check-circle" style="color: green;"></i> {{ _("Execution completed successfully") }}';
-                        outputEl.innerHTML = `<pre style="background: #f8f9fa; padding: 10px; border-radius: 4px; color: #2d3748;">${escapeHtml(data.output || '{{ _("No output") }}')}</pre>`;
-                    } else if (data.success === false) {
-                        statusEl.innerHTML = '<i class="fa fa-exclamation-triangle" style="color: orange;"></i> {{ _("Execution completed with errors") }}';
-                        outputEl.innerHTML = `<pre style="background: #fff3cd; padding: 10px; border-radius: 4px; color: #856404;">${escapeHtml(data.output || '{{ _("Error occurred") }}')}</pre>`;
-                    } else {
-                        statusEl.innerHTML = '<i class="fa fa-question-circle" style="color: gray;"></i> {{ _("Execution completed") }}';
-                        outputEl.innerHTML = `<pre style="background: #f8f9fa; padding: 10px; border-radius: 4px;">${escapeHtml(data.output || '{{ _("Unknown result") }}')}</pre>`;
-                    }
-                    
-                    // Show timing info if available
-                    if (data.time !== null || data.memory !== null) {
-                        let timingInfo = [];
-                        if (data.time !== null) timingInfo.push(`{{ _("Time") }}: ${data.time}s`);
-                        if (data.memory !== null) timingInfo.push(`{{ _("Memory") }}: ${data.memory}KB`);
-                        timingEl.innerHTML = `<small class="text-muted">${timingInfo.join(' | ')}</small>`;
-                    }
-                } else {
-                    // Still executing
-                    statusEl.innerHTML = '<i class="fa fa-spinner fa-spin"></i> {{ _("Executing code...") }}';
-                }
-            })
-            .catch(error => {
-                console.error('Status check error:', error);
-            });
-        }
         
         function handleExecutionError(error) {
             // Re-enable run button
@@ -566,12 +538,6 @@ for i in range(3):
             document.getElementById('result-status').innerHTML = '<i class="fa fa-exclamation-circle" style="color: red;"></i> {{ _("Execution failed") }}';
             document.getElementById('result-output').innerHTML = `<pre style="background: #f8d7da; padding: 10px; border-radius: 4px; color: #721c24;">${escapeHtml(error)}</pre>`;
             document.getElementById('result-timing').innerHTML = '';
-            
-            // Clear any polling
-            if (statusCheckInterval) {
-                clearInterval(statusCheckInterval);
-                statusCheckInterval = null;
-            }
         }
         
         function clearEditor() {
