@@ -86,12 +86,12 @@
     <div class="tutorial-info">
         <h4>{{ _('Tutorial to be deleted:') }}</h4>
         <p><strong>{{ _('Title:') }}</strong> {{ object.title }}</p>
-        <p><strong>{{ _('Created:') }}</strong> {{ object.publish_on|date:"N j, Y, g:i a" }}</p>
+        <p><strong>{{ _('Created:') }}</strong> {{ object.publish_on|date }}</p>
         {% with authors=object.authors.all() %}
             {% if authors %}
                 <p><strong>{{ _('Authors:') }}</strong> 
                 {% for author in authors %}
-                    {{ author.user.username }}{% if not forloop.last %}, {% endif %}
+                    {{ author.user.username }}{% if not loop.last %}, {% endif %}
                 {% endfor %}
                 </p>
             {% endif %}
