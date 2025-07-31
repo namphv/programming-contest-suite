@@ -252,33 +252,43 @@
         
         <!-- Slide Deck Section -->
         {% if tutorial.slide_deck_url %}
-            <div class="tutorial-section tutorial-slides">
-                <h3 class="tutorial-section-title">
-                    <i class="fa fa-slideshare"></i> {{ _('Presentation Slides') }}
-                </h3>
-                <div class="tutorial-section-content">
-                    <div class="slide-container" style="position: relative; padding-bottom: 42.19%; height: 0; overflow: hidden; max-width: 800px; margin: 0 auto;">
-                        <iframe src="{{ tutorial.slide_deck_url }}" 
-                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 1px solid #ddd; border-radius: 4px;"
-                                frameborder="0" 
-                                allowfullscreen
-                                loading="lazy"
-                                title="Tutorial Presentation Slides">
-                        </iframe>
-                    </div>
-                    <div class="slide-actions" style="margin-top: 10px; text-align: center;">
-                        <a href="{{ tutorial.slide_deck_url }}" target="_blank" class="btn btn-primary">
-                            <i class="fa fa-external-link"></i> {{ _('Open slides in new tab') }}
-                        </a>
-                        <button class="btn btn-secondary" onclick="toggleSlideFullscreen()" style="margin-left: 10px;">
-                            <i class="fa fa-expand"></i> {{ _('Toggle Fullscreen') }}
-                        </button>
-                    </div>
-                    <p class="slide-note" style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                        <i class="fa fa-info-circle"></i> 
-                        {{ _('Supports Google Slides, PowerPoint Online, SlideShare, and other embed-ready platforms') }}
-                    </p>
-                </div>
+            {% set embed_url = tutorial.slide_deck_url %}
+            {# Convert various Google Docs URL formats to proper embed URLs #}
+            {% if 'docs.google.com/presentation' in embed_url %}
+                {# Always convert to /embed format for better iframe compatibility #}
+                {% if '/pub?' in embed_url %}
+                    {# Convert /pub? to /embed? format #}
+                    {% set embed_url = embed_url.replace('/pub?', '/embed?') %}
+                {% elif '/edit' in embed_url %}
+                    {# Convert edit URL to embed URL #}
+                    {% set presentation_id = embed_url.split('/d/')[1].split('/')[0] %}
+                    {% set embed_url = 'https://docs.google.com/presentation/d/' + presentation_id + '/embed?start=false&loop=false&delayms=3000' %}
+                {% endif %}
+            {% elif 'docs.google.com/document' in embed_url %}
+                {% if '/edit' in embed_url %}
+                    {% set embed_url = embed_url.replace('/edit', '/preview') %}
+                {% endif %}
+            {% endif %}
+            
+            <!-- Clean slide container -->
+            <div class="slide-container" style="position: relative; padding-bottom: 45%; height: 0; overflow: hidden; max-width: 900px; margin: 30px auto; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <iframe id="slide-iframe"
+                        src="{{ embed_url }}" 
+                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 8px;"
+                        frameborder="0" 
+                        allowfullscreen
+                        loading="lazy"
+                        title="Tutorial Presentation Slides"
+                        onload="handleSlideLoad()"
+                        onerror="handleSlideError()">
+                </iframe>
+            </div>
+            
+            <!-- Fallback message -->
+            <div id="slide-fallback" style="display: none; text-align: center; padding: 20px; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; margin: 10px auto; max-width: 600px;">
+                <i class="fa fa-exclamation-triangle" style="color: #856404;"></i>
+                <strong>Unable to load slides</strong><br>
+                <small>The slides cannot be displayed in this frame.</small>
             </div>
         {% endif %}
         
@@ -571,6 +581,24 @@ print(f"Average: {average:.2f}")`;
             
             if (tutorialPythonEditor) {
                 tutorialPythonEditor.setValue(exampleCode, -1);
+            }
+        }
+        
+        // Slide loading functions
+        function handleSlideLoad() {
+            console.log('Slides loaded successfully');
+            // Hide fallback message if it was shown
+            const fallback = document.getElementById('slide-fallback');
+            if (fallback) {
+                fallback.style.display = 'none';
+            }
+        }
+        
+        function handleSlideError() {
+            console.error('Slides failed to load');
+            const fallback = document.getElementById('slide-fallback');
+            if (fallback) {
+                fallback.style.display = 'block';
             }
         }
         
