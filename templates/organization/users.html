@@ -43,6 +43,8 @@
 {% endblock %}
 {% block title_ruler %}{% endblock %}
 
+{% block before_users_table %}{% endblock %}
+
 {% block users_table %}
     {% set table_id='organization-users-table' %}
     {% include "organization/users-table.html" %}

@@ -1,14 +1,17 @@
+import csv
+import re
 from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
+from django.db import transaction
 from django.db.models import Count, FilteredRelation, Q, FloatField
 from django.db.models.expressions import F, Value, RawSQL
 from django.db.models.functions import Coalesce, Cast
 from django.forms import Form, modelformset_factory
-from django.http import Http404, HttpResponsePermanentRedirect, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponsePermanentRedirect, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
@@ -722,3 +725,212 @@ class ContestCreateOrganization(CustomAdminOrganizationMixin, CreateContest):
         self.object.is_organization_private = True
         self.object.organizations.add(self.organization)
         self.object.save()
+
+
+# CSV User Import Functionality
+
+def generate_username_from_email(email):
+    """Generate unique username from email address"""
+    # Take part before @ and clean it
+    base = email.split('@')[0]
+    
+    # Remove special characters, keep only alphanumeric and underscore
+    username = re.sub(r'[^\w]', '_', base.lower())
+    
+    # Ensure it doesn't start with a number (Django requirement)
+    if username and username[0].isdigit():
+        username = 'user_' + username
+    
+    # Handle duplicates by adding numbers
+    original = username
+    counter = 1
+    while User.objects.filter(username=username).exists():
+        username = f"{original}_{counter}"
+        counter += 1
+    
+    return username
+
+
+class CSVImportForm(forms.Form):
+    csv_file = forms.FileField(
+        label=_('CSV File'),
+        help_text=_('Upload CSV file with columns: email, full_name, password (max 2MB, 100 users)'),
+        widget=forms.FileInput(attrs={'accept': '.csv'})
+    )
+    
+    def clean_csv_file(self):
+        csv_file = self.cleaned_data.get('csv_file')
+        
+        if not csv_file:
+            raise forms.ValidationError(_('Please select a CSV file.'))
+        
+        # Check file size (2MB limit)
+        if csv_file.size > 2 * 1024 * 1024:
+            raise forms.ValidationError(_('File too large. Maximum size is 2MB.'))
+        
+        # Check file extension
+        if not csv_file.name.lower().endswith('.csv'):
+            raise forms.ValidationError(_('Please upload a CSV file.'))
+        
+        return csv_file
+
+
+class OrganizationUserImportView(CustomAdminOrganizationMixin, FormView):
+    form_class = CSVImportForm
+    template_name = 'organization/import_users.html'
+    
+    def get_form_kwargs(self):
+        kwargs = super(FormView, self).get_form_kwargs()  # Skip CustomAdminOrganizationMixin's get_form_kwargs
+        return kwargs
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['organization'] = self.organization
+        context['title'] = _('Import Users - %s') % self.organization.name
+        context['is_admin'] = self.can_edit_organization()
+        return context
+    
+    def form_valid(self, form):
+        csv_file = form.cleaned_data['csv_file']
+        
+        try:
+            # Process CSV file
+            result = self.process_csv_file(csv_file)
+            
+            # Add results to context for display
+            context = self.get_context_data(form=form)
+            context.update(result)
+            context['import_completed'] = True
+            
+            return self.render_to_response(context)
+            
+        except Exception as e:
+            messages.error(self.request, _('Error processing CSV file: %s') % str(e))
+            return super().form_invalid(form)
+    
+    def process_csv_file(self, csv_file):
+        """Process uploaded CSV file and create users"""
+        created_users = []
+        skipped_users = []
+        errors = []
+        
+        # Read and decode CSV file
+        csv_content = csv_file.read().decode('utf-8')
+        csv_reader = csv.DictReader(csv_content.splitlines())
+        
+        # Validate CSV headers
+        required_headers = ['email', 'full_name', 'password']
+        optional_headers = ['username']
+        if not all(header in csv_reader.fieldnames for header in required_headers):
+            raise ValueError(_('CSV must contain columns: email, full_name, password. Username column is optional.'))
+        
+        rows = list(csv_reader)
+        
+        # Check row limit
+        if len(rows) > 100:
+            raise ValueError(_('Maximum 100 users allowed per import. Your file has %d rows.') % len(rows))
+        
+        with transaction.atomic():
+            for row_num, row in enumerate(rows, start=2):  # Start at 2 because row 1 is headers
+                try:
+                    email = row.get('email', '').strip()
+                    full_name = row.get('full_name', '').strip()
+                    password = row.get('password', '').strip()
+                    username = row.get('username', '').strip()
+                    
+                    # Validate required fields
+                    if not email or not full_name or not password:
+                        errors.append({
+                            'row': row_num,
+                            'error': _('Missing required fields (email, full_name, password)')
+                        })
+                        continue
+                    
+                    # Check if email already exists
+                    if User.objects.filter(email=email).exists():
+                        skipped_users.append({
+                            'row': row_num,
+                            'email': email,
+                            'reason': _('Email already exists')
+                        })
+                        continue
+                    
+                    # Generate username if not provided
+                    if not username:
+                        username = generate_username_from_email(email)
+                    else:
+                        # Check if provided username already exists
+                        if User.objects.filter(username=username).exists():
+                            skipped_users.append({
+                                'row': row_num,
+                                'email': email,
+                                'reason': _('Username already exists: %s') % username
+                            })
+                            continue
+                    
+                    # Create user
+                    user = User.objects.create_user(
+                        username=username,
+                        email=email,
+                        password=password,
+                        first_name=full_name,
+                        is_active=True  # Auto-activate
+                    )
+                    
+                    # Create profile
+                    profile, created = Profile.objects.get_or_create(
+                        user=user,
+                        defaults={
+                            'language': Language.get_default_language(),
+                            'timezone': settings.DEFAULT_USER_TIME_ZONE,
+                        }
+                    )
+                    
+                    # Add to organization
+                    profile.organizations.add(self.organization)
+                    
+                    created_users.append({
+                        'row': row_num,
+                        'email': email,
+                        'full_name': full_name,
+                        'username': username
+                    })
+                    
+                except Exception as e:
+                    errors.append({
+                        'row': row_num,
+                        'error': str(e)
+                    })
+        
+        return {
+            'created_users': created_users,
+            'skipped_users': skipped_users,
+            'errors': errors,
+            'total_created': len(created_users),
+            'total_skipped': len(skipped_users),
+            'total_errors': len(errors),
+        }
+
+
+class OrganizationUserImportTemplateView(CustomAdminOrganizationMixin, View):
+    """Download CSV template for user import"""
+    
+    def get(self, request, *args, **kwargs):
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = 'attachment; filename="users_template.csv"'
+        
+        # Add UTF-8 BOM for Excel compatibility
+        response.write('\ufeff')
+        
+        writer = csv.writer(response)
+        
+        # Write headers
+        writer.writerow(['email', 'full_name', 'password', 'username'])
+        
+        # Write sample data with Vietnamese names
+        writer.writerow(['admin@school.edu.vn', 'Quản Trị Viên', 'password123', 'admin'])
+        writer.writerow(['teacher1@school.edu.vn', 'Nguyễn Văn Giáo', 'giaovien2024', ''])  # Empty username - will be generated
+        writer.writerow(['student.2024@school.edu.vn', 'Trần Thị Học Sinh', 'hocsinh123', 'student2024'])
+        writer.writerow(['pham.van.nam@school.edu.vn', 'Phạm Văn Nam', 'matkhau456', ''])  # Empty username - will be generated
+        
+        return response

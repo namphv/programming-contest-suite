@@ -306,6 +306,9 @@ urlpatterns = [
             path('new', organization.BlogPostCreateOrganization.as_view(), name='blog_post_create_organization'),
         ])),
 
+        path('/import-users/', organization.OrganizationUserImportView.as_view(), name='organization_import_users'),
+        path('/import-users/template/', organization.OrganizationUserImportTemplateView.as_view(), name='organization_import_template'),
+
         path('/', lambda _, pk, slug: HttpResponsePermanentRedirect(reverse('organization_home', args=[pk, slug]))),
     ])),
 
