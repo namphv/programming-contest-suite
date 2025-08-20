@@ -401,6 +401,18 @@ class ContestClone(ContestMixin, PermissionRequiredMixin, TitleMixin, SingleObje
         contest.virtual_count = 0
         contest.locked_after = None
         contest.key = form.cleaned_data['key']
+
+        # Set default times: today at 12:00 and 1 month from today
+        from datetime import timedelta
+        from django.utils import timezone
+
+        now = timezone.now()
+        today_noon = now.replace(hour=12, minute=0, second=0, microsecond=0)
+        one_month_later = today_noon + timedelta(days=30)
+
+        contest.start_time = today_noon
+        contest.end_time = one_month_later
+
         with revisions.create_revision(atomic=True):
             contest.save()
             contest.tags.set(tags)
@@ -468,6 +480,18 @@ class ContestClone2(ContestMixin, PermissionRequiredMixin, TitleMixin, SingleObj
         contest.virtual_count = 0
         contest.locked_after = None
         contest.key = form.cleaned_data['key']
+
+        # Set default times: today at 12:00 and 1 month from today
+        from datetime import timedelta
+        from django.utils import timezone
+
+        now = timezone.now()
+        today_noon = now.replace(hour=12, minute=0, second=0, microsecond=0)
+        one_month_later = today_noon + timedelta(days=30)
+
+        contest.start_time = today_noon
+        contest.end_time = one_month_later
+
         print(f'--------------------{form.cleaned_data}++++++++++++++++++++++++++++++++ ')
         with revisions.create_revision(atomic=True):
             contest.save()
