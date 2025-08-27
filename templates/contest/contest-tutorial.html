@@ -1,0 +1,125 @@
+{% extends "contest/contest-tabs.html" %}
+
+{% block title_ruler %}{% endblock %}
+
+{% block body %}
+<div class="tutorial-content">
+    {% if tutorial %}
+        <div class="tutorial-header">
+            <h2>{{ tutorial.title }}</h2>
+            {% if tutorial.summary %}
+                <div class="tutorial-summary">
+                    <p>{{ tutorial.summary }}</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="tutorial-body">
+            {{ tutorial.content|safe }}
+        </div>
+        
+        {% if tutorial.scratch_examples or tutorial.python_examples %}
+            <div class="tutorial-examples">
+                <h3>{{ _('Examples') }}</h3>
+                
+                {% if tutorial.python_examples %}
+                    <div class="example-section">
+                        <h4>{{ _('Python Examples') }}</h4>
+                        <pre class="code-block"><code class="python">{{ tutorial.python_examples }}</code></pre>
+                    </div>
+                {% endif %}
+                
+                {% if tutorial.scratch_examples %}
+                    <div class="example-section">
+                        <h4>{{ _('Scratch Examples') }}</h4>
+                        <pre class="code-block"><code>{{ tutorial.scratch_examples }}</code></pre>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+        
+        {% if tutorial.scratch_image %}
+            <div class="tutorial-image">
+                <h3>{{ _('Visual Guide') }}</h3>
+                <img src="{{ tutorial.scratch_image.url }}" alt="{{ tutorial.title }}" class="tutorial-img">
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="no-tutorial">
+            <h3>{{ _('No Tutorial Available') }}</h3>
+            <p>{{ _('This contest does not have an associated tutorial yet.') }}</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.tutorial-content {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.tutorial-header {
+    margin-bottom: 30px;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 15px;
+}
+
+.tutorial-header h2 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.tutorial-summary {
+    background: #f8f9fa;
+    border-left: 4px solid #007bff;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.tutorial-body {
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+.tutorial-examples {
+    margin-top: 30px;
+}
+
+.example-section {
+    margin-bottom: 20px;
+}
+
+.code-block {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 15px;
+    overflow-x: auto;
+}
+
+.tutorial-image {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.tutorial-img {
+    max-width: 100%;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.no-tutorial {
+    text-align: center;
+    padding: 50px;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .tutorial-content {
+        padding: 10px;
+    }
+}
+</style>
+{% endblock %}
