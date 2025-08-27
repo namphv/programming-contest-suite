@@ -2,6 +2,9 @@
 
 {% block tabs %}
     {{ make_tab('detail', 'fa-info-circle', url('contest_view', contest.key), _('Info')) }}
+    {% if contest.tutorial %}
+        {{ make_tab('tutorial', 'fa-book', url('contest_tutorial', contest.key), _('Bài giảng')) }}
+    {% endif %}
     {% if contest.can_see_full_submission_list(request.user) %}
         {{ make_tab('stats', 'fa-pie-chart', url('contest_stats', contest.key), _('Statistics')) }}
     {% endif %}

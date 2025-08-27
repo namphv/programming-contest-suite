@@ -231,6 +231,7 @@ urlpatterns = [
 
     path('contest/<str:contest>', include([
         path('', contests.ContestDetail.as_view(), name='contest_view'),
+        path('/tutorial', contests.ContestTutorial.as_view(), name='contest_tutorial'),
         path('/all', contests.ContestAllProblems.as_view(), name='contest_all_problems'),
         path('/edit', contests.EditContest.as_view(), name='contest_edit'),
         path('/moss', contests.ContestMossView.as_view(), name='contest_moss'),

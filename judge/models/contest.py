@@ -157,6 +157,9 @@ class Contest(models.Model):
     virtual_count = models.IntegerField(verbose_name=_('the amount of virtual participants'), default=0)
     summary = models.TextField(blank=True, verbose_name=_('contest summary'),
                                help_text=_('Plain-text, shown in meta description tag, e.g. for social media.'))
+    tutorial = models.ForeignKey('judge.Tutorial', on_delete=models.SET_NULL, null=True, blank=True,
+                                verbose_name=_('contest tutorial'),
+                                help_text=_('Associated tutorial to display with this contest.'))
     access_code = models.CharField(verbose_name=_('access code'), blank=True, default='', max_length=255,
                                    help_text=_('An optional code to prompt contestants before they are allowed '
                                                'to join the contest. Leave it blank to disable.'))

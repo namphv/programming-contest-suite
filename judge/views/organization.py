@@ -805,7 +805,7 @@ class OrganizationUserImportView(CustomAdminOrganizationMixin, FormView):
             return self.render_to_response(context)
             
         except Exception as e:
-            messages.error(self.request, _('Error processing CSV file: %s') % str(e))
+            form.add_error('csv_file', str(e))
             return super().form_invalid(form)
     
     def process_csv_file(self, csv_file):
@@ -815,7 +815,7 @@ class OrganizationUserImportView(CustomAdminOrganizationMixin, FormView):
         errors = []
         
         # Read and decode CSV file
-        csv_content = csv_file.read().decode('utf-8')
+        csv_content = csv_file.read().decode('utf-8-sig')  # utf-8-sig handles BOM
         csv_reader = csv.DictReader(csv_content.splitlines())
         
         # Validate CSV headers

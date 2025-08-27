@@ -336,6 +336,28 @@ class ContestDetail(ContestMixin, TitleMixin, CommentedDetailView):
         return context
 
 
+class ContestTutorial(ContestMixin, TitleMixin, DetailView):
+    template_name = 'contest/contest-tutorial.html'
+
+    def get_title(self):
+        return _('Tutorial - %s') % self.object.name
+
+    def get_context_data(self, **kwargs):
+        context = super(ContestTutorial, self).get_context_data(**kwargs)
+        if self.object.tutorial:
+            context['tutorial'] = self.object.tutorial
+        else:
+            context['tutorial'] = None
+        return context
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        # Check if contest has a tutorial
+        if not self.object.tutorial:
+            raise Http404(_('This contest does not have a tutorial'))
+        return super().get(request, *args, **kwargs)
+
+
 class ContestAllProblems(ContestMixin, TitleMixin, DetailView):
     template_name = 'contest/contest-all-problems.html'
 

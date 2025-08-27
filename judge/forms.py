@@ -718,6 +718,28 @@ class ContestForm(ModelForm):
             str(self.fields['private_contestants'].help_text) + ' ' + \
             str(_('You can paste a list of usernames into this box.'))
 
+        # Filter tutorials based on organization and user permissions
+        from judge.models import Tutorial
+        tutorial_queryset = Tutorial.objects.filter(visible=True)
+
+        if org_pk:
+            # For organization contests, show org tutorials + user's authored tutorials
+            tutorial_queryset = tutorial_queryset.filter(
+                Q(organization_id=org_pk) |
+                Q(authors=self.user.profile if self.user and self.user.is_authenticated else None)
+            ).distinct()
+        elif self.user and self.user.is_authenticated:
+            # For public contests, show public tutorials + user's authored tutorials
+            tutorial_queryset = tutorial_queryset.filter(
+                Q(organization__isnull=True) |
+                Q(authors=self.user.profile)
+            ).distinct()
+        else:
+            # For anonymous users, only show public tutorials
+            tutorial_queryset = tutorial_queryset.filter(organization__isnull=True)
+
+        self.fields['tutorial'].queryset = tutorial_queryset
+
     def clean(self):
         cleaned_data = super().clean()
         start_time = cleaned_data.get('start_time')
@@ -752,6 +774,7 @@ class ContestForm(ModelForm):
             'hide_problem_authors',
             'scoreboard_visibility',
             'description',
+            'tutorial',
             'is_private',
             'private_contestants',
         ]
@@ -761,6 +784,7 @@ class ContestForm(ModelForm):
             'end_time': DateTimeInput(format='%Y-%m-%d %H:%M:%S', attrs={'class': 'datetimefield'}),
             'description': MartorWidget(attrs={'data-markdownfy-url': reverse_lazy('contest_preview')}),
             'scoreboard_visibility': Select2Widget(),
+            'tutorial': Select2Widget(),
             'private_contestants': HeavySelect2MultipleWidget(
                 data_view='profile_select2',
                 attrs={'style': 'width: 100%'},
