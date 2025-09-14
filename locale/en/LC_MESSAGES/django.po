@@ -3558,6 +3558,10 @@ msgstr ""
 msgid "Tutorials"
 msgstr ""
 
+#: templates/contest/contest-tabs.html
+msgid "Tutorial"
+msgstr ""
+
 #: judge/views/blog.py:307 judge/views/blog.py:310
 msgid "Creating new blog post"
 msgstr ""

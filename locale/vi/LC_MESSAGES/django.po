@@ -3625,7 +3625,11 @@ msgstr "Blog - Trang %d"
 #: templates/tutorial/list.html:48
 #, fuzzy
 msgid "Tutorials"
-msgstr "Lời giải"
+msgstr "Bài giảng"
+
+#: templates/contest/contest-tabs.html
+msgid "Tutorial"
+msgstr "Bài giảng"
 
 #: judge/views/blog.py:307 judge/views/blog.py:310
 msgid "Creating new blog post"
