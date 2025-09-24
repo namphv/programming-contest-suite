@@ -5,15 +5,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0152_contest_show_short_display'),
+        ("judge", "0152_contest_show_short_display"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='profile',
-            name='display_rank',
-            field=models.CharField(choices=settings.VNOJ_DISPLAY_RANKS, default='user', max_length=10, verbose_name='display rank'),
+            model_name="profile",
+            name="display_rank",
+            field=models.CharField(
+                choices=settings.VNOJ_DISPLAY_RANKS,
+                default="user",
+                max_length=10,
+                verbose_name="display rank",
+            ),
         ),
     ]

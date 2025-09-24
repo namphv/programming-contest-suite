@@ -4,15 +4,25 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0155_contest_announcement'),
+        ("judge", "0155_contest_announcement"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='contest',
-            name='scoreboard_visibility',
-            field=models.CharField(choices=[('V', 'Visible'), ('H', 'Always hidden'), ('C', 'Hidden for duration of contest'), ('P', 'Hidden for duration of participation')], default='V', help_text='Scoreboard visibility through the duration of the contest', max_length=1, verbose_name='scoreboard visibility'),
+            model_name="contest",
+            name="scoreboard_visibility",
+            field=models.CharField(
+                choices=[
+                    ("V", "Visible"),
+                    ("H", "Always hidden"),
+                    ("C", "Hidden for duration of contest"),
+                    ("P", "Hidden for duration of participation"),
+                ],
+                default="V",
+                help_text="Scoreboard visibility through the duration of the contest",
+                max_length=1,
+                verbose_name="scoreboard visibility",
+            ),
         ),
     ]

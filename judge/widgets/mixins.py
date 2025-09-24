@@ -20,10 +20,10 @@ class CompressorWidgetMixin(object):
     """)
 
     __templates = {
-        (False, False): Template(''),
-        (True, False): Template('{% load compress %}' + __template_css),
-        (False, True): Template('{% load compress %}' + __template_js),
-        (True, True): Template('{% load compress %}' + __template_js + __template_css),
+        (False, False): Template(""),
+        (True, False): Template("{% load compress %}" + __template_css),
+        (False, True): Template("{% load compress %}" + __template_js),
+        (True, True): Template("{% load compress %}" + __template_js + __template_css),
     }
 
     compress_css = False
@@ -34,14 +34,19 @@ class CompressorWidgetMixin(object):
     except ImportError:
         pass
     else:
-        if getattr(settings, 'COMPRESS_ENABLED', not settings.DEBUG):
+        if getattr(settings, "COMPRESS_ENABLED", not settings.DEBUG):
+
             @property
             def media(self):
                 media = super().media
                 template = self.__templates[self.compress_css, self.compress_js]
-                result = html.fromstring(template.render(Context({'media': media})))
+                result = html.fromstring(template.render(Context({"media": media})))
 
                 return forms.Media(
-                    css={'all': [result.find('.//link').get('href')]} if self.compress_css else media._css,
-                    js=[result.find('.//script').get('src')] if self.compress_js else media._js,
+                    css={"all": [result.find(".//link").get("href")]}
+                    if self.compress_css
+                    else media._css,
+                    js=[result.find(".//script").get("src")]
+                    if self.compress_js
+                    else media._js,
                 )

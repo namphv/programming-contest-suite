@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0102_api_token'),
+        ("judge", "0102_api_token"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='contestparticipation',
-            name='tiebreaker',
-            field=models.FloatField(default=0.0, verbose_name='tie-breaking field'),
+            model_name="contestparticipation",
+            name="tiebreaker",
+            field=models.FloatField(default=0.0, verbose_name="tie-breaking field"),
         ),
     ]

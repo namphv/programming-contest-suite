@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0114_remove_org_registrant'),
-        ('judge', '0120_allow_py_cpp_files_in_custom_checker'),
+        ("judge", "0114_remove_org_registrant"),
+        ("judge", "0120_allow_py_cpp_files_in_custom_checker"),
     ]
 
-    operations = [
-    ]
+    operations = []

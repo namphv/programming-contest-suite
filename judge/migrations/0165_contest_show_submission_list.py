@@ -4,15 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0164_add_frozen_fields'),
+        ("judge", "0164_add_frozen_fields"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='contest',
-            name='show_submission_list',
-            field=models.BooleanField(default=True, help_text='Allow contestants to view submission list of others in contest time'),
+            model_name="contest",
+            name="show_submission_list",
+            field=models.BooleanField(
+                default=True,
+                help_text="Allow contestants to view submission list of others in contest time",
+            ),
         ),
     ]

@@ -4,19 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0135_add_field_source_to_problem'),
+        ("judge", "0135_add_field_source_to_problem"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='contest',
-            name='csv_ranking',
+            model_name="contest",
+            name="csv_ranking",
             field=models.TextField(
                 blank=True,
-                help_text='Official ranking exported from CMS in CSV format.',
-                verbose_name='official ranking',
+                help_text="Official ranking exported from CMS in CSV format.",
+                verbose_name="official ranking",
             ),
         ),
     ]

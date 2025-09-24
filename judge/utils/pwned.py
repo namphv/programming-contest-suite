@@ -32,7 +32,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."""
 
-
 import hashlib
 import logging
 
@@ -46,7 +45,7 @@ from judge.utils.unicode import utf8bytes
 
 log = logging.getLogger(__name__)
 
-API_ENDPOINT = 'https://api.pwnedpasswords.com/range/{}'
+API_ENDPOINT = "https://api.pwnedpasswords.com/range/{}"
 REQUEST_TIMEOUT = 2.0  # 2 seconds
 
 
@@ -60,20 +59,20 @@ def _get_pwned(prefix):
             url=API_ENDPOINT.format(prefix),
             timeout=getattr(
                 settings,
-                'PWNED_PASSWORDS_API_TIMEOUT',
+                "PWNED_PASSWORDS_API_TIMEOUT",
                 REQUEST_TIMEOUT,
             ),
         )
         response.raise_for_status()
     except requests.RequestException:
         # Gracefully handle timeouts and HTTP error response codes.
-        log.warning('Skipped Pwned Passwords check due to error', exc_info=True)
+        log.warning("Skipped Pwned Passwords check due to error", exc_info=True)
         return None
 
     results = {}
     for line in response.text.splitlines():
-        line_suffix, _, times = line.partition(':')
-        results[line_suffix] = int(times.replace(',', ''))
+        line_suffix, _, times = line.partition(":")
+        results[line_suffix] = int(times.replace(",", ""))
 
     return results
 
@@ -83,7 +82,7 @@ def pwned_password(password):
     Checks a password against the Pwned Passwords database.
     """
     if not isinstance(password, str):
-        raise TypeError('Password values to check must be strings.')
+        raise TypeError("Password values to check must be strings.")
     password_hash = hashlib.sha1(utf8bytes(password)).hexdigest().upper()
     prefix, suffix = password_hash[:5], password_hash[5:]
     results = _get_pwned(prefix)
@@ -106,7 +105,7 @@ class PwnedPasswordsValidator(object):
             # the same database.
             CommonPasswordValidator().validate(password, user)
         elif amount:
-            raise ValidationError(_('This password is too common.'))
+            raise ValidationError(_("This password is too common."))
 
     def get_help_text(self):
         return _("Your password can't be a commonly used password.")

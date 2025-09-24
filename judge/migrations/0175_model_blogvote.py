@@ -5,29 +5,50 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0174_model_badge'),
+        ("judge", "0174_model_badge"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='blogpost',
-            name='score',
-            field=models.IntegerField(default=0, verbose_name='votes'),
+            model_name="blogpost",
+            name="score",
+            field=models.IntegerField(default=0, verbose_name="votes"),
         ),
         migrations.CreateModel(
-            name='BlogVote',
+            name="BlogVote",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('score', models.IntegerField()),
-                ('blog', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='votes', to='judge.BlogPost')),
-                ('voter', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='voted_blogs', to='judge.Profile')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("score", models.IntegerField()),
+                (
+                    "blog",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="votes",
+                        to="judge.BlogPost",
+                    ),
+                ),
+                (
+                    "voter",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="voted_blogs",
+                        to="judge.Profile",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'blog vote',
-                'verbose_name_plural': 'blog votes',
-                'unique_together': {('voter', 'blog')},
+                "verbose_name": "blog vote",
+                "verbose_name_plural": "blog votes",
+                "unique_together": {("voter", "blog")},
             },
         ),
     ]

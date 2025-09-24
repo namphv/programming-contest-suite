@@ -4,15 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0149_totp_no_reuse'),
+        ("judge", "0149_totp_no_reuse"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='problem',
-            name='submission_source_visibility_mode',
-            field=models.CharField(choices=[('F', 'Follow global setting'), ('A', 'Always visible'), ('S', 'Visible if problem solved'), ('O', 'Only own submissions')], default='F', max_length=1, verbose_name='submission source visibility'),
+            model_name="problem",
+            name="submission_source_visibility_mode",
+            field=models.CharField(
+                choices=[
+                    ("F", "Follow global setting"),
+                    ("A", "Always visible"),
+                    ("S", "Visible if problem solved"),
+                    ("O", "Only own submissions"),
+                ],
+                default="F",
+                max_length=1,
+                verbose_name="submission source visibility",
+            ),
         ),
     ]

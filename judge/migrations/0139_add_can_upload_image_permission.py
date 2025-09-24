@@ -4,14 +4,24 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0138_alter_field_pdf_url_on_problem'),
+        ("judge", "0138_alter_field_pdf_url_on_problem"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='profile',
-            options={'permissions': (('test_site', 'Shows in-progress development stuff'), ('totp', 'Edit TOTP settings'), ('can_upload_image', 'Can upload image directly to server via martor')), 'verbose_name': 'user profile', 'verbose_name_plural': 'user profiles'},
+            name="profile",
+            options={
+                "permissions": (
+                    ("test_site", "Shows in-progress development stuff"),
+                    ("totp", "Edit TOTP settings"),
+                    (
+                        "can_upload_image",
+                        "Can upload image directly to server via martor",
+                    ),
+                ),
+                "verbose_name": "user profile",
+                "verbose_name_plural": "user profiles",
+            },
         ),
     ]

@@ -62,7 +62,9 @@ class BaseContestFormat(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def display_user_problem(self, participation, contest_problem, first_solves, frozen=False):
+    def display_user_problem(
+        self, participation, contest_problem, first_solves, frozen=False
+    ):
         """
         Returns the HTML fragment to show a user's performance on an individual problem. This is expected to use
         information from the format_data field instead of computing it from scratch.
@@ -120,7 +122,7 @@ class BaseContestFormat(metaclass=ABCMeta):
     @classmethod
     def best_solution_state(cls, points, total):
         if not points:
-            return 'failed-score'
+            return "failed-score"
         if points == total:
-            return 'full-score'
-        return 'partial-score'
+            return "full-score"
+        return "partial-score"

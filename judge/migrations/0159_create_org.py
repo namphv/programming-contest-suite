@@ -4,19 +4,32 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0158_unlisted_org'),
+        ("judge", "0158_unlisted_org"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='organization',
-            options={'ordering': ['name'], 'permissions': (('organization_admin', 'Administer organizations'), ('edit_all_organization', 'Edit all organizations'), ('change_open_organization', 'Change is_open field'), ('spam_organization', 'Create organization without limit')), 'verbose_name': 'organization', 'verbose_name_plural': 'organizations'},
+            name="organization",
+            options={
+                "ordering": ["name"],
+                "permissions": (
+                    ("organization_admin", "Administer organizations"),
+                    ("edit_all_organization", "Edit all organizations"),
+                    ("change_open_organization", "Change is_open field"),
+                    ("spam_organization", "Create organization without limit"),
+                ),
+                "verbose_name": "organization",
+                "verbose_name_plural": "organizations",
+            },
         ),
         migrations.AlterField(
-            model_name='organization',
-            name='is_open',
-            field=models.BooleanField(default=False, help_text='Allow joining organization.', verbose_name='is open organization?'),
+            model_name="organization",
+            name="is_open",
+            field=models.BooleanField(
+                default=False,
+                help_text="Allow joining organization.",
+                verbose_name="is open organization?",
+            ),
         ),
     ]

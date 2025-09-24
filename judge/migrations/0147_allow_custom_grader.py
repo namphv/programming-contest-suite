@@ -8,30 +8,65 @@ import judge.utils.problem_data
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0146_submit_via_file'),
+        ("judge", "0146_submit_via_file"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='problemdata',
-            name='custom_grader',
-            field=models.FileField(blank=True, null=True, storage=judge.utils.problem_data.ProblemDataStorage(), upload_to=judge.models.problem_data.problem_directory_file, validators=[django.core.validators.FileExtensionValidator(allowed_extensions=['cpp', 'py'])], verbose_name='custom grader file'),
+            model_name="problemdata",
+            name="custom_grader",
+            field=models.FileField(
+                blank=True,
+                null=True,
+                storage=judge.utils.problem_data.ProblemDataStorage(),
+                upload_to=judge.models.problem_data.problem_directory_file,
+                validators=[
+                    django.core.validators.FileExtensionValidator(
+                        allowed_extensions=["cpp", "py"]
+                    )
+                ],
+                verbose_name="custom grader file",
+            ),
         ),
         migrations.AddField(
-            model_name='problemdata',
-            name='custom_header',
-            field=models.FileField(blank=True, null=True, storage=judge.utils.problem_data.ProblemDataStorage(), upload_to=judge.models.problem_data.problem_directory_file, validators=[django.core.validators.FileExtensionValidator(allowed_extensions=['h'])], verbose_name='custom header file'),
+            model_name="problemdata",
+            name="custom_header",
+            field=models.FileField(
+                blank=True,
+                null=True,
+                storage=judge.utils.problem_data.ProblemDataStorage(),
+                upload_to=judge.models.problem_data.problem_directory_file,
+                validators=[
+                    django.core.validators.FileExtensionValidator(
+                        allowed_extensions=["h"]
+                    )
+                ],
+                verbose_name="custom header file",
+            ),
         ),
         migrations.AddField(
-            model_name='problemdata',
-            name='grader',
-            field=models.CharField(blank=True, choices=[('standard', 'Standard'), ('interactive', 'Interactive'), ('signature', 'Function Signature Grading (IOI-style)'), ('custom_judge', 'Custom Grader')], max_length=30, verbose_name='Grader'),
+            model_name="problemdata",
+            name="grader",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("standard", "Standard"),
+                    ("interactive", "Interactive"),
+                    ("signature", "Function Signature Grading (IOI-style)"),
+                    ("custom_judge", "Custom Grader"),
+                ],
+                max_length=30,
+                verbose_name="Grader",
+            ),
         ),
         migrations.AddField(
-            model_name='problemdata',
-            name='grader_args',
-            field=models.TextField(blank=True, help_text='grader arguments as a JSON object', verbose_name='grader arguments'),
+            model_name="problemdata",
+            name="grader_args",
+            field=models.TextField(
+                blank=True,
+                help_text="grader arguments as a JSON object",
+                verbose_name="grader arguments",
+            ),
         ),
     ]

@@ -4,14 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0189_comment_revision_count'),
+        ("judge", "0189_comment_revision_count"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='submission',
-            index=models.Index(fields=['contest_object', 'problem', 'user', '-points', '-time'], name='judge_submi_contest_59fbe3_idx'),
+            model_name="submission",
+            index=models.Index(
+                fields=["contest_object", "problem", "user", "-points", "-time"],
+                name="judge_submi_contest_59fbe3_idx",
+            ),
         ),
     ]

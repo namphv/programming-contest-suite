@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 
-URL_VALIDATOR = URLValidator(schemes=['http', 'https'])
+URL_VALIDATOR = URLValidator(schemes=["http", "https"])
 
 
 def get_absolute_url(url, host):

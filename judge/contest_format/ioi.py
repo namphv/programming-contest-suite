@@ -6,10 +6,10 @@ from judge.contest_format.registry import register_contest_format
 from judge.timezone import from_database_time
 
 
-@register_contest_format('ioi16')
+@register_contest_format("ioi16")
 class IOIContestFormat(LegacyIOIContestFormat):
-    name = gettext_lazy('IOI')
-    config_defaults = {'cumtime': False}
+    name = gettext_lazy("IOI")
+    config_defaults = {"cumtime": False}
     """
         cumtime: Specify True if time penalties are to be computed. Defaults to False.
     """
@@ -20,7 +20,8 @@ class IOIContestFormat(LegacyIOIContestFormat):
         format_data = {}
 
         with connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT q.prob,
                        MIN(q.date) as `date`,
                        q.batch_points
@@ -64,25 +65,29 @@ class IOIContestFormat(LegacyIOIContestFormat):
                 ON p.prob = q.prob AND (p.batch = q.batch OR p.batch is NULL AND q.batch is NULL)
                 WHERE p.max_batch_points = q.batch_points
                 GROUP BY q.prob, q.batch
-            """, (participation.id, participation.id))
+            """,
+                (participation.id, participation.id),
+            )
 
             for problem_id, time, subtask_points in cursor.fetchall():
                 problem_id = str(problem_id)
                 time = from_database_time(time)
-                if self.config['cumtime']:
+                if self.config["cumtime"]:
                     dt = (time - participation.start).total_seconds()
                 else:
                     dt = 0
 
                 if format_data.get(problem_id) is None:
-                    format_data[problem_id] = {'points': 0, 'time': 0}
-                format_data[problem_id]['points'] += subtask_points
-                format_data[problem_id]['time'] = max(dt, format_data[problem_id]['time'])
+                    format_data[problem_id] = {"points": 0, "time": 0}
+                format_data[problem_id]["points"] += subtask_points
+                format_data[problem_id]["time"] = max(
+                    dt, format_data[problem_id]["time"]
+                )
 
             for problem_data in format_data.values():
-                penalty = problem_data['time']
-                points = problem_data['points']
-                if self.config['cumtime'] and points:
+                penalty = problem_data["time"]
+                points = problem_data["points"]
+                if self.config["cumtime"] and points:
                     cumtime += penalty
                 score += points
 
@@ -93,10 +98,12 @@ class IOIContestFormat(LegacyIOIContestFormat):
         participation.save()
 
     def get_short_form_display(self):
-        yield _('The maximum score for each problem batch will be used.')
+        yield _("The maximum score for each problem batch will be used.")
 
-        if self.config['cumtime']:
-            yield _('Ties will be broken by the sum of the last score altering submission time on problems with a '
-                    'non-zero score.')
+        if self.config["cumtime"]:
+            yield _(
+                "Ties will be broken by the sum of the last score altering submission time on problems with a "
+                "non-zero score."
+            )
         else:
-            yield _('Ties by score will **not** be broken.')
+            yield _("Ties by score will **not** be broken.")

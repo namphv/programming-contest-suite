@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0105_webauthn'),
+        ("judge", "0105_webauthn"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='data_last_downloaded',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='last data download time'),
+            model_name="profile",
+            name="data_last_downloaded",
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="last data download time"
+            ),
         ),
     ]

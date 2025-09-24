@@ -167,6 +167,27 @@
             color: #0c5460;
         }
         
+        /* Video container specific styles */
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25% !important; /* 16:9 aspect ratio */
+            height: 0 !important;
+            overflow: hidden;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .video-container iframe {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
         /* Mobile responsiveness */
         @media (max-width: 768px) {
             .tutorial-section-content {
@@ -292,7 +313,28 @@
             </div>
         {% endif %}
         
-        
+        <!-- YouTube Video Section -->
+        {% if tutorial.youtube_url %}
+            <div class="tutorial-section">
+                <h3 class="tutorial-section-title">
+                    <i class="fa fa-youtube-play"></i> {{ _('Tutorial Video') }}
+                </h3>
+                <div class="tutorial-section-content">
+                    <!-- YouTube video container with responsive aspect ratio -->
+                    <div class="video-container">
+                        <iframe id="youtube-iframe"
+                                src="{{ tutorial.youtube_url }}"
+                                frameborder="0"
+                                allowfullscreen
+                                loading="lazy"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                title="Tutorial YouTube Video">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         <!-- Interactive Code Editor Section -->
         <div class="tutorial-section tutorial-interactive-editor">
             <h3 class="tutorial-section-title">

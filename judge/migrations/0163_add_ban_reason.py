@@ -6,30 +6,40 @@ import judge.models.problem
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0162_add_testcase_visibility'),
+        ("judge", "0162_add_testcase_visibility"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='ban_reason',
-            field=models.TextField(blank=True, help_text='Show to banned user in login page.', null=True),
+            model_name="profile",
+            name="ban_reason",
+            field=models.TextField(
+                blank=True, help_text="Show to banned user in login page.", null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='problemclarification',
-            name='description',
-            field=models.TextField(validators=[judge.models.problem.disallowed_characters_validator], verbose_name='clarification body'),
+            model_name="problemclarification",
+            name="description",
+            field=models.TextField(
+                validators=[judge.models.problem.disallowed_characters_validator],
+                verbose_name="clarification body",
+            ),
         ),
         migrations.AlterField(
-            model_name='problemtranslation',
-            name='description',
-            field=models.TextField(validators=[judge.models.problem.disallowed_characters_validator], verbose_name='translated description'),
+            model_name="problemtranslation",
+            name="description",
+            field=models.TextField(
+                validators=[judge.models.problem.disallowed_characters_validator],
+                verbose_name="translated description",
+            ),
         ),
         migrations.AlterField(
-            model_name='solution',
-            name='content',
-            field=models.TextField(validators=[judge.models.problem.disallowed_characters_validator], verbose_name='editorial content'),
+            model_name="solution",
+            name="content",
+            field=models.TextField(
+                validators=[judge.models.problem.disallowed_characters_validator],
+                verbose_name="editorial content",
+            ),
         ),
     ]

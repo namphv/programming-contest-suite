@@ -4,46 +4,56 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0185_dark_ace_theme'),
+        ("judge", "0185_dark_ace_theme"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='profile',
-            name='contribution_points',
+            model_name="profile",
+            name="contribution_points",
             field=models.IntegerField(default=0),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='performance_points',
+            model_name="profile",
+            name="performance_points",
             field=models.FloatField(default=0),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='points',
+            model_name="profile",
+            name="points",
             field=models.FloatField(default=0),
         ),
         migrations.AlterField(
-            model_name='profile',
-            name='problem_count',
+            model_name="profile",
+            name="problem_count",
             field=models.IntegerField(default=0),
         ),
         migrations.AddIndex(
-            model_name='profile',
-            index=models.Index(fields=['is_unlisted', '-performance_points'], name='judge_profi_is_unli_1410d8_idx'),
+            model_name="profile",
+            index=models.Index(
+                fields=["is_unlisted", "-performance_points"],
+                name="judge_profi_is_unli_1410d8_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='profile',
-            index=models.Index(fields=['is_unlisted', '-contribution_points'], name='judge_profi_is_unli_d31e5b_idx'),
+            model_name="profile",
+            index=models.Index(
+                fields=["is_unlisted", "-contribution_points"],
+                name="judge_profi_is_unli_d31e5b_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='profile',
-            index=models.Index(fields=['is_unlisted', '-rating'], name='judge_profi_is_unli_bcf16a_idx'),
+            model_name="profile",
+            index=models.Index(
+                fields=["is_unlisted", "-rating"], name="judge_profi_is_unli_bcf16a_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='profile',
-            index=models.Index(fields=['is_unlisted', '-problem_count'], name='judge_profi_is_unli_171bf3_idx'),
+            model_name="profile",
+            index=models.Index(
+                fields=["is_unlisted", "-problem_count"],
+                name="judge_profi_is_unli_171bf3_idx",
+            ),
         ),
     ]

@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0127_add_organization_performance_points'),
-        ('judge', '0128_ticket_is_contributive'),
+        ("judge", "0127_add_organization_performance_points"),
+        ("judge", "0128_ticket_is_contributive"),
     ]
 
-    operations = [
-    ]
+    operations = []

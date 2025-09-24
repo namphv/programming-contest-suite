@@ -8,20 +8,38 @@ from statici18n.templatetags.statici18n import inlinei18n
 
 from judge.highlight_code import highlight_code
 from judge.user_translations import gettext
-from . import (camo, datetime, filesize, format, gravatar, language, markdown, rating, reference, render, social,
-               spaceless, submission, timedelta)
+from . import (
+    camo,
+    datetime,
+    filesize,
+    format,
+    gravatar,
+    language,
+    markdown,
+    rating,
+    reference,
+    render,
+    social,
+    spaceless,
+    submission,
+    timedelta,
+)
 from . import registry
 
-registry.function('str', str)
-registry.filter('str', str)
-registry.filter('json', json.dumps)
-registry.filter('highlight', highlight_code)
-registry.filter('urlquote', quote)
-registry.filter('roundfloat', round)
-registry.function('ordinal', lambda n: '%d%s' % (n, 'tsnrhtdd'[(n // 10 % 10 != 1) * (n % 10 < 4) * n % 10::4]))
-registry.function('inlinei18n', inlinei18n)
-registry.function('mptt_tree', get_cached_trees)
-registry.function('user_trans', gettext)
+registry.function("str", str)
+registry.filter("str", str)
+registry.filter("json", json.dumps)
+registry.filter("highlight", highlight_code)
+registry.filter("urlquote", quote)
+registry.filter("roundfloat", round)
+registry.function(
+    "ordinal",
+    lambda n: "%d%s"
+    % (n, "tsnrhtdd"[(n // 10 % 10 != 1) * (n % 10 < 4) * n % 10 :: 4]),
+)
+registry.function("inlinei18n", inlinei18n)
+registry.function("mptt_tree", get_cached_trees)
+registry.function("user_trans", gettext)
 
 
 @registry.function

@@ -5,7 +5,7 @@ import requests
 from django.conf import settings
 from django.utils.translation import gettext
 
-logger = logging.getLogger('judge.problem.pdf')
+logger = logging.getLogger("judge.problem.pdf")
 
 
 PDFOID_URL = settings.DMOJ_PDF_PDFOID_URL
@@ -18,27 +18,28 @@ def render_pdf(*, title: str, html: str, footer: bool = False) -> bytes:
 
     if footer:
         footer_template = (
-            '<center style="margin: 0 auto; font-family: Segoe UI; font-size: 10px">' +
-            gettext('Page {page_number} of {total_pages}') +
-            '</center>')
+            '<center style="margin: 0 auto; font-family: Segoe UI; font-size: 10px">'
+            + gettext("Page {page_number} of {total_pages}")
+            + "</center>"
+        )
     else:
         footer_template = None
 
     response = requests.post(
         PDFOID_URL,
         data={
-            'html': html,
-            'title': title,
-            'footer-template': footer_template,
-            'wait-for-class': 'math-loaded',
-            'wait-for-duration-secs': 15,
+            "html": html,
+            "title": title,
+            "footer-template": footer_template,
+            "wait-for-class": "math-loaded",
+            "wait-for-duration-secs": 15,
         },
     )
 
     response.raise_for_status()
     data = response.json()
 
-    if not data['success']:
-        raise RuntimeError(data['error'])
+    if not data["success"]:
+        raise RuntimeError(data["error"])
 
-    return base64.b64decode(data['pdf'])
+    return base64.b64decode(data["pdf"])

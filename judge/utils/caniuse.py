@@ -3,16 +3,18 @@ import os
 
 from ua_parser import user_agent_parser
 
-with open(os.path.join(os.path.dirname(__file__), '..', '..', 'resources', 'caniuse.json')) as f:
-    _SUPPORT_DATA = json.loads(f.read())['data']
+with open(
+    os.path.join(os.path.dirname(__file__), "..", "..", "resources", "caniuse.json")
+) as f:
+    _SUPPORT_DATA = json.loads(f.read())["data"]
 
-SUPPORT = 'y'
-PARTIAL_SUPPORT = 'a'
-UNSUPPORTED = 'n'
-POLYFILL = 'p'
-UNKNOWN = 'u'
-PREFIX = 'x'
-DISABLED = 'd'
+SUPPORT = "y"
+PARTIAL_SUPPORT = "a"
+UNSUPPORTED = "n"
+POLYFILL = "p"
+UNKNOWN = "u"
+PREFIX = "x"
+DISABLED = "d"
 
 
 def safe_int(string):
@@ -31,19 +33,19 @@ class BrowserFamily(object):
         max_support = UNKNOWN
 
         for version, support in data.items():
-            if version == 'all':
+            if version == "all":
                 self.max_support = support
-            elif '-' in version:
-                start, end = version.split('-')
-                start = tuple(map(int, start.split('.')))
-                end = tuple(map(int, end.split('.'))) + (1e3000,)
+            elif "-" in version:
+                start, end = version.split("-")
+                start = tuple(map(int, start.split(".")))
+                end = tuple(map(int, end.split("."))) + (1e3000,)
                 ranges.append((start, end, support))
                 if end > max_version:
                     max_version = end
                     max_support = support
             else:
                 try:
-                    version = tuple(map(int, version.split('.')))
+                    version = tuple(map(int, version.split(".")))
                 except ValueError:
                     pass
                 else:
@@ -62,7 +64,12 @@ class BrowserFamily(object):
         if version > self.max_version:
             return self.max_support
 
-        for key in ((int_major, int_minor, int_patch), (int_major, int_minor), (int_major,), major):
+        for key in (
+            (int_major, int_minor, int_patch),
+            (int_major, int_minor),
+            (int_major,),
+            major,
+        ):
             try:
                 return self._versions[key]
             except KeyError:
@@ -78,7 +85,9 @@ class BrowserFamily(object):
 class Feat(object):
     def __init__(self, data):
         self._data = data
-        self._family = {name: BrowserFamily(data) for name, data in data['stats'].items()}
+        self._family = {
+            name: BrowserFamily(data) for name, data in data["stats"].items()
+        }
 
     def __getitem__(self, item):
         return self._family[item]
@@ -100,31 +109,31 @@ class CanIUse(object):
     def __init__(self, ua):
         self._agent = user_agent_parser.Parse(ua)
 
-        os_family = self._agent['os']['family']
-        browser_family = self._agent['user_agent']['family']
+        os_family = self._agent["os"]["family"]
+        browser_family = self._agent["user_agent"]["family"]
 
         family = None
 
-        if os_family == 'Android':
-            if 'Firefox' in browser_family:
-                family = 'and_ff'
-            elif 'Chrome' in browser_family:
-                family = 'and_chr'
-            elif 'Android' in browser_family:
-                family = 'android'
+        if os_family == "Android":
+            if "Firefox" in browser_family:
+                family = "and_ff"
+            elif "Chrome" in browser_family:
+                family = "and_chr"
+            elif "Android" in browser_family:
+                family = "android"
         else:
-            if 'Edge' in browser_family:
-                family = 'edge'
-            elif 'Firefox' in browser_family:
-                family = 'firefox'
-            elif 'Chrome' in browser_family:
-                family = 'chrome'
-            elif 'IE' in browser_family:
-                family = 'ie'
-            elif 'Opera' in browser_family:
-                family = 'opera'
-            elif 'Safari' in browser_family:
-                family = 'safari'
+            if "Edge" in browser_family:
+                family = "edge"
+            elif "Firefox" in browser_family:
+                family = "firefox"
+            elif "Chrome" in browser_family:
+                family = "chrome"
+            elif "IE" in browser_family:
+                family = "ie"
+            elif "Opera" in browser_family:
+                family = "opera"
+            elif "Safari" in browser_family:
+                family = "safari"
 
         self._family = family
 
@@ -137,12 +146,12 @@ class CanIUse(object):
         except KeyError:
             return UNKNOWN
         else:
-            ua = self._agent['user_agent']
-            return stats.check(ua['major'], ua['minor'], ua['patch'])[0]
+            ua = self._agent["user_agent"]
+            return stats.check(ua["major"], ua["minor"], ua["patch"])[0]
 
     def __getattr__(self, attr):
         try:
-            feat = database[attr.replace('_', '-')]
+            feat = database[attr.replace("_", "-")]
         except KeyError:
             raise AttributeError(attr)
         else:

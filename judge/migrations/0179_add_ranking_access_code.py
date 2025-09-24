@@ -4,15 +4,20 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0178_add_java_checker'),
+        ("judge", "0178_add_java_checker"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='contest',
-            name='ranking_access_code',
-            field=models.CharField(blank=True, default='', help_text='An optional code to view the contest ranking. Leave it blank to disable.', max_length=255, verbose_name='ranking access code'),
+            model_name="contest",
+            name="ranking_access_code",
+            field=models.CharField(
+                blank=True,
+                default="",
+                help_text="An optional code to view the contest ranking. Leave it blank to disable.",
+                max_length=255,
+                verbose_name="ranking access code",
+            ),
         ),
     ]

@@ -4,15 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0139_add_can_upload_image_permission'),
+        ("judge", "0139_add_can_upload_image_permission"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='problem',
-            name='banned_judges',
-            field=models.ManyToManyField(blank=True, help_text='Bans the selected judges from judging this problem.', to='judge.Judge', verbose_name='Banned judges'),
+            model_name="problem",
+            name="banned_judges",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="Bans the selected judges from judging this problem.",
+                to="judge.Judge",
+                verbose_name="Banned judges",
+            ),
         ),
     ]

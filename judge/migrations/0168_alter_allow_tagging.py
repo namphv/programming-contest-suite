@@ -4,25 +4,29 @@ from django.db import migrations, models
 
 
 def all_allow_tagging_to_True(apps, schema_editor):
-    for profile in apps.get_model('judge', 'Profile').objects.all().iterator():
+    for profile in apps.get_model("judge", "Profile").objects.all().iterator():
         profile.allow_tagging = True
-        profile.save(update_fields=['allow_tagging'])
+        profile.save(update_fields=["allow_tagging"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0167_profile_username_display_override'),
+        ("judge", "0167_profile_username_display_override"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='profile',
-            name='allow_tagging',
-            field=models.BooleanField(default=True, help_text='User will be allowed to tag problems.', verbose_name='Allow tagging'),
+            model_name="profile",
+            name="allow_tagging",
+            field=models.BooleanField(
+                default=True,
+                help_text="User will be allowed to tag problems.",
+                verbose_name="Allow tagging",
+            ),
         ),
         migrations.RunPython(
             code=all_allow_tagging_to_True,
             reverse_code=migrations.RunPython.noop,
-            atomic=True),
+            atomic=True,
+        ),
     ]

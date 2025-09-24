@@ -4,19 +4,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0142_add_index'),
+        ("judge", "0142_add_index"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='profile',
-            name='banned_tagging',
+            model_name="profile",
+            name="banned_tagging",
         ),
         migrations.AddField(
-            model_name='profile',
-            name='allow_tagging',
-            field=models.BooleanField(default=False, help_text='User will be allowed to tag problems.', verbose_name='Allow tagging'),
+            model_name="profile",
+            name="allow_tagging",
+            field=models.BooleanField(
+                default=False,
+                help_text="User will be allowed to tag problems.",
+                verbose_name="Allow tagging",
+            ),
         ),
     ]

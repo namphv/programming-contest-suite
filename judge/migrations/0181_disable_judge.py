@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0180_add_problem_data_hints'),
+        ("judge", "0180_add_problem_data_hints"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='judge',
-            name='is_disabled',
-            field=models.BooleanField(default=False, help_text='Whether this judge should be removed from judging queue.', verbose_name='disable judge'),
+            model_name="judge",
+            name="is_disabled",
+            field=models.BooleanField(
+                default=False,
+                help_text="Whether this judge should be removed from judging queue.",
+                verbose_name="disable judge",
+            ),
         ),
     ]

@@ -4,15 +4,20 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0194_auto_20250714_1600'),
+        ("judge", "0194_auto_20250714_1600"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='tutorial',
-            name='scratch_image',
-            field=models.ImageField(blank=True, help_text='Image to display in the Scratch tab', null=True, upload_to='tutorial_images/', verbose_name='scratch image'),
+            model_name="tutorial",
+            name="scratch_image",
+            field=models.ImageField(
+                blank=True,
+                help_text="Image to display in the Scratch tab",
+                null=True,
+                upload_to="tutorial_images/",
+                verbose_name="scratch image",
+            ),
         ),
     ]

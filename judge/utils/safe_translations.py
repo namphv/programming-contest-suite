@@ -12,7 +12,15 @@ def _init():
 
         return wrapper
 
-    for func in ['gettext', 'gettext_lazy', 'gettext_noop', 'ngettext', 'ngettext_lazy', 'pgettext', 'pgettext_lazy']:
+    for func in [
+        "gettext",
+        "gettext_lazy",
+        "gettext_noop",
+        "ngettext",
+        "ngettext_lazy",
+        "pgettext",
+        "pgettext_lazy",
+    ]:
         globals()[func] = wrap(getattr(translation, func))
 
 

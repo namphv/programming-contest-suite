@@ -4,20 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0172_contest_disallow_virtual'),
+        ("judge", "0172_contest_disallow_virtual"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='problem',
-            name='allow_view_feedback',
-            field=models.BooleanField(default=False, help_text='Allow user to view checker feedback.'),
+            model_name="problem",
+            name="allow_view_feedback",
+            field=models.BooleanField(
+                default=False, help_text="Allow user to view checker feedback."
+            ),
         ),
         migrations.AddField(
-            model_name='problem',
-            name='allow_view_testcase_status',
-            field=models.BooleanField(default=True, help_text='Allow user to view result of testcase. Should be allow for most of problems except for ICPC'),
+            model_name="problem",
+            name="allow_view_testcase_status",
+            field=models.BooleanField(
+                default=True,
+                help_text="Allow user to view result of testcase. Should be allow for most of problems except for ICPC",
+            ),
         ),
     ]

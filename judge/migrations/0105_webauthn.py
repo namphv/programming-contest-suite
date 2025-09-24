@@ -5,26 +5,50 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0104_contestproblem_maxsubs'),
+        ("judge", "0104_contestproblem_maxsubs"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='is_webauthn_enabled',
-            field=models.BooleanField(default=False, help_text='Check to enable WebAuthn-based two-factor authentication.', verbose_name='WebAuthn 2FA enabled'),
+            model_name="profile",
+            name="is_webauthn_enabled",
+            field=models.BooleanField(
+                default=False,
+                help_text="Check to enable WebAuthn-based two-factor authentication.",
+                verbose_name="WebAuthn 2FA enabled",
+            ),
         ),
         migrations.CreateModel(
-            name='WebAuthnCredential',
+            name="WebAuthnCredential",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, verbose_name='device name')),
-                ('cred_id', models.CharField(max_length=255, unique=True, verbose_name='credential ID')),
-                ('public_key', models.TextField(verbose_name='public key')),
-                ('counter', models.BigIntegerField(verbose_name='sign counter')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='webauthn_credentials', to='judge.Profile', verbose_name='user')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=100, verbose_name="device name")),
+                (
+                    "cred_id",
+                    models.CharField(
+                        max_length=255, unique=True, verbose_name="credential ID"
+                    ),
+                ),
+                ("public_key", models.TextField(verbose_name="public key")),
+                ("counter", models.BigIntegerField(verbose_name="sign counter")),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="webauthn_credentials",
+                        to="judge.Profile",
+                        verbose_name="user",
+                    ),
+                ),
             ],
         ),
     ]

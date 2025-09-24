@@ -11,10 +11,12 @@ class Command(BaseCommand):
            access admin pages."""
 
     def add_arguments(self, parser):
-        parser.add_argument('name', help='username')
+        parser.add_argument("name", help="username")
 
     def handle(self, *args, **options):
         try:
-            print(Profile.objects.get(user__username=options['name']).generate_api_token())
+            print(
+                Profile.objects.get(user__username=options["name"]).generate_api_token()
+            )
         except Profile.DoesNotExist:
-            raise User.DoesNotExist('User %s does not exist' % options['name'])
+            raise User.DoesNotExist("User %s does not exist" % options["name"])

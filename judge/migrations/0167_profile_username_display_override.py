@@ -4,15 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0166_contest_scoreboard_cache_timeout'),
+        ("judge", "0166_contest_scoreboard_cache_timeout"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='username_display_override',
-            field=models.CharField(blank=True, help_text='Name displayed in place of username.', max_length=100, verbose_name='display name override'),
+            model_name="profile",
+            name="username_display_override",
+            field=models.CharField(
+                blank=True,
+                help_text="Name displayed in place of username.",
+                max_length=100,
+                verbose_name="display name override",
+            ),
         ),
     ]

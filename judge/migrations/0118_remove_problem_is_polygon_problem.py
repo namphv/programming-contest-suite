@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0117_change_default_timezone'),
+        ("judge", "0117_change_default_timezone"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='problem',
-            name='is_polygon_problem',
+            model_name="problem",
+            name="is_polygon_problem",
         ),
     ]

@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 
 def count_organization_member(apps, schema_editor):
-    Organization = apps.get_model('judge', 'Organization')
+    Organization = apps.get_model("judge", "Organization")
     for org in Organization.objects.all():
         org.member_count = org.members.count()
         org.save()
@@ -15,16 +15,17 @@ def undo_count_organiation_member(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0131_merge_migration_0130_0118'),
+        ("judge", "0131_merge_migration_0130_0118"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='organization',
-            name='member_count',
+            model_name="organization",
+            name="member_count",
             field=models.IntegerField(default=0),
         ),
-        migrations.RunPython(count_organization_member, undo_count_organiation_member, atomic=True),
+        migrations.RunPython(
+            count_organization_member, undo_count_organiation_member, atomic=True
+        ),
     ]

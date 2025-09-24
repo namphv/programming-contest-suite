@@ -14,7 +14,9 @@ from judge.contest_format.registry import register_contest_format
 from judge.timezone import from_database_time, to_database_time
 from judge.utils.timedelta import nice_repr
 
-ParticipationInfo = namedtuple('ParticipationInfo', 'cumtime score tiebreaker format_data')
+ParticipationInfo = namedtuple(
+    "ParticipationInfo", "cumtime score tiebreaker format_data"
+)
 
 DEFAULT_RANKING_SQL = """
 SELECT MAX(cs.points) as `points`, (
@@ -44,11 +46,14 @@ GROUP BY cp.id
 """
 
 
-@register_contest_format('vnoj')
+@register_contest_format("vnoj")
 class VNOJContestFormat(DefaultContestFormat):
-    name = gettext_lazy('VNOJ')
-    config_defaults = {'penalty': 5, 'LSO': False}
-    config_validators = {'penalty': lambda x: x >= 0, 'LSO': lambda x: isinstance(x, bool)}
+    name = gettext_lazy("VNOJ")
+    config_defaults = {"penalty": 5, "LSO": False}
+    config_validators = {
+        "penalty": lambda x: x >= 0,
+        "LSO": lambda x: isinstance(x, bool),
+    }
     """
         penalty: Number of penalty minutes each incorrect submission adds. Defaults to 5.
         LSO: Last submission only. If true, cumtime will used the last submission time, not the total time of
@@ -61,7 +66,9 @@ class VNOJContestFormat(DefaultContestFormat):
             return
 
         if not isinstance(config, dict):
-            raise ValidationError('VNOJ-styled contest expects no config or dict as config')
+            raise ValidationError(
+                "VNOJ-styled contest expects no config or dict as config"
+            )
 
         for key, value in config.items():
             if key not in cls.config_defaults:
@@ -69,14 +76,18 @@ class VNOJContestFormat(DefaultContestFormat):
             if not isinstance(value, type(cls.config_defaults[key])):
                 raise ValidationError('invalid type for config key "%s"' % key)
             if not cls.config_validators[key](value):
-                raise ValidationError('invalid value "%s" for config key "%s"' % (value, key))
+                raise ValidationError(
+                    'invalid value "%s" for config key "%s"' % (value, key)
+                )
 
     def __init__(self, contest, config):
         self.config = self.config_defaults.copy()
         self.config.update(config or {})
         self.contest = contest
 
-    def calculate_participation_info(self, participation, frozen=False) -> ParticipationInfo:
+    def calculate_participation_info(
+        self, participation, frozen=False
+    ) -> ParticipationInfo:
         cumtime = 0
         last = 0
         penalty = 0
@@ -87,29 +98,35 @@ class VNOJContestFormat(DefaultContestFormat):
 
         with connection.cursor() as cursor:
             if not frozen:
-                cursor.execute(DEFAULT_RANKING_SQL, (participation.id, participation.id))
+                cursor.execute(
+                    DEFAULT_RANKING_SQL, (participation.id, participation.id)
+                )
             else:
                 db_time = to_database_time(frozen_time)
-                cursor.execute(FROZEN_RANKING_SQL, (participation.id, db_time,
-                                                    participation.id, db_time))
+                cursor.execute(
+                    FROZEN_RANKING_SQL,
+                    (participation.id, db_time, participation.id, db_time),
+                )
 
             for points, time, prob in cursor.fetchall():
                 time = from_database_time(time)
                 dt = (time - participation.start).total_seconds()
                 # An IE can have a submission result of `None`
-                problem_subs = participation.submissions.exclude(submission__result__isnull=True) \
-                                            .exclude(submission__result__in=['IE', 'CE']) \
-                                            .filter(problem_id=prob)
+                problem_subs = (
+                    participation.submissions.exclude(submission__result__isnull=True)
+                    .exclude(submission__result__in=["IE", "CE"])
+                    .filter(problem_id=prob)
+                )
 
                 # Compute penalty
-                if self.config['penalty']:
+                if self.config["penalty"]:
                     subs = problem_subs
                     if frozen:
                         subs = subs.filter(submission__date__lt=frozen_time)
 
                     if points:
                         prev = subs.filter(submission__date__lte=time).count() - 1
-                        penalty += prev * self.config['penalty'] * 60
+                        penalty += prev * self.config["penalty"] * 60
                     else:
                         # We should always display the penalty, even if the user has a score of 0
                         prev = subs.count()
@@ -120,17 +137,17 @@ class VNOJContestFormat(DefaultContestFormat):
                     cumtime += dt
                     last = max(last, dt)
 
-                format_data[str(prob)] = {'time': dt, 'points': points, 'penalty': prev}
+                format_data[str(prob)] = {"time": dt, "points": points, "penalty": prev}
 
                 if not frozen and participation.contest.frozen_last_minutes != 0:
-                    format_data[str(prob)]['pending'] = problem_subs \
-                        .filter(submission__date__gte=frozen_time) \
-                        .count()
+                    format_data[str(prob)]["pending"] = problem_subs.filter(
+                        submission__date__gte=frozen_time
+                    ).count()
 
                 score += points
 
         return ParticipationInfo(
-            cumtime=(last if self.config['LSO'] else cumtime) + penalty,
+            cumtime=(last if self.config["LSO"] else cumtime) + penalty,
             score=round(score, self.contest.points_precision),
             tiebreaker=last,
             format_data=format_data,
@@ -155,8 +172,8 @@ class VNOJContestFormat(DefaultContestFormat):
                 frozen_data = frozen_info.format_data.get(prob, {})
                 new_prob_data = {**data}
                 for key in data.keys():
-                    if key != 'pending':
-                        new_prob_data['frozen_' + key] = frozen_data.get(key, 0)
+                    if key != "pending":
+                        new_prob_data["frozen_" + key] = frozen_data.get(key, 0)
 
                 format_data[prob] = new_prob_data
 
@@ -176,42 +193,69 @@ class VNOJContestFormat(DefaultContestFormat):
             for participation in participations:
                 format_data = (participation.format_data or {}).get(problem_id)
                 if format_data:
-                    has_pending = bool(format_data.get('pending', 0))
-                    prefix = 'frozen_' if frozen and has_pending else ''
-                    points = format_data[prefix + 'points']
-                    time = format_data[prefix + 'time']
+                    has_pending = bool(format_data.get("pending", 0))
+                    prefix = "frozen_" if frozen and has_pending else ""
+                    points = format_data[prefix + "points"]
+                    time = format_data[prefix + "time"]
 
                     if points == problem.points:
                         total_ac[problem_id] += 1
 
                         # Only acknowledge first solves for live participations
-                        if participation.virtual == 0 and (min_time is None or min_time > time):
+                        if participation.virtual == 0 and (
+                            min_time is None or min_time > time
+                        ):
                             min_time = time
                             first_solves[problem_id] = participation.id
 
         return first_solves, total_ac
 
-    def display_user_problem(self, participation, contest_problem, first_solves, frozen=False):
+    def display_user_problem(
+        self, participation, contest_problem, first_solves, frozen=False
+    ):
         format_data = (participation.format_data or {}).get(str(contest_problem.id))
 
         if format_data:
-            first_solved = first_solves.get(str(contest_problem.id), None) == participation.id
-            url = reverse('contest_user_submissions',
-                          args=[self.contest.key, participation.user.user.username, contest_problem.problem.code])
+            first_solved = (
+                first_solves.get(str(contest_problem.id), None) == participation.id
+            )
+            url = reverse(
+                "contest_user_submissions",
+                args=[
+                    self.contest.key,
+                    participation.user.user.username,
+                    contest_problem.problem.code,
+                ],
+            )
 
             if not frozen:
                 # Fast path for non-frozen contests
-                penalty = format_html(
-                    '<small style="color:red"> ({penalty})</small>',
-                    penalty=floatformat(format_data['penalty']),
-                ) if format_data['penalty'] else ''
+                penalty = (
+                    format_html(
+                        '<small style="color:red"> ({penalty})</small>',
+                        penalty=floatformat(format_data["penalty"]),
+                    )
+                    if format_data["penalty"]
+                    else ""
+                )
 
-                state = (('pretest-' if self.contest.run_pretests_only and contest_problem.is_pretested else '') +
-                         ('first-solve ' if first_solved else '') +
-                         self.best_solution_state(format_data['points'], contest_problem.points))
+                state = (
+                    (
+                        "pretest-"
+                        if self.contest.run_pretests_only
+                        and contest_problem.is_pretested
+                        else ""
+                    )
+                    + ("first-solve " if first_solved else "")
+                    + self.best_solution_state(
+                        format_data["points"], contest_problem.points
+                    )
+                )
 
-                points = floatformat(format_data['points'], -self.contest.points_precision)
-                time = nice_repr(timedelta(seconds=format_data['time']), 'noday')
+                points = floatformat(
+                    format_data["points"], -self.contest.points_precision
+                )
+                time = nice_repr(timedelta(seconds=format_data["time"]), "noday")
 
                 return format_html(
                     '<td class="{state}"><a href="{url}"><div>{points}{penalty}</div>'
@@ -224,40 +268,63 @@ class VNOJContestFormat(DefaultContestFormat):
                 )
 
             # This prefix is used to help get the correct data from the format_data dictionary
-            has_pending = bool(format_data.get('pending', 0))
-            prefix = 'frozen_' if has_pending else ''
+            has_pending = bool(format_data.get("pending", 0))
+            prefix = "frozen_" if has_pending else ""
 
             # AC before frozen_time
-            if has_pending and format_data[prefix + 'points'] == contest_problem.points:
+            if has_pending and format_data[prefix + "points"] == contest_problem.points:
                 has_pending = False
-                prefix = ''
+                prefix = ""
 
-            penalty = format_html(
-                '<small style="color:red"> ({penalty})</small>',
-                penalty=floatformat(format_data[prefix + 'penalty']),
-            ) if format_data[prefix + 'penalty'] else ''
+            penalty = (
+                format_html(
+                    '<small style="color:red"> ({penalty})</small>',
+                    penalty=floatformat(format_data[prefix + "penalty"]),
+                )
+                if format_data[prefix + "penalty"]
+                else ""
+            )
 
-            state = (('pending ' if has_pending else '') +
-                     ('pretest-' if self.contest.run_pretests_only and contest_problem.is_pretested else '') +
-                     ('first-solve ' if first_solved else '') +
-                     self.best_solution_state(format_data[prefix + 'points'], contest_problem.points))
+            state = (
+                ("pending " if has_pending else "")
+                + (
+                    "pretest-"
+                    if self.contest.run_pretests_only and contest_problem.is_pretested
+                    else ""
+                )
+                + ("first-solve " if first_solved else "")
+                + self.best_solution_state(
+                    format_data[prefix + "points"], contest_problem.points
+                )
+            )
 
-            points = floatformat(format_data[prefix + 'points'], -self.contest.points_precision)
-            time = nice_repr(timedelta(seconds=format_data[prefix + 'time']), 'noday')
-            pending = format_html(' <small style="color:black;">[{pending}]</small>',
-                                  pending=floatformat(format_data['pending'])) if has_pending else ''
+            points = floatformat(
+                format_data[prefix + "points"], -self.contest.points_precision
+            )
+            time = nice_repr(timedelta(seconds=format_data[prefix + "time"]), "noday")
+            pending = (
+                format_html(
+                    ' <small style="color:black;">[{pending}]</small>',
+                    pending=floatformat(format_data["pending"]),
+                )
+                if has_pending
+                else ""
+            )
 
             if has_pending:
-                time = '?'
+                time = "?"
                 # hide penalty if there are pending submissions
-                penalty = ''
+                penalty = ""
 
                 # if user have no submission before the frozen time, we display points as '?'
-                if format_data.get('frozen_points', 0) == 0 and format_data.get('frozen_penalty', 0) == 0:
-                    points = '?'
+                if (
+                    format_data.get("frozen_points", 0) == 0
+                    and format_data.get("frozen_penalty", 0) == 0
+                ):
+                    points = "?"
                 else:
                     # if user have submissions before the frozen time, we display points as points + '?'
-                    points = points + '?'
+                    points = points + "?"
 
             return format_html(
                 '<td class="{state}"><a href="{url}"><div>{points}{penalty}{pending}</div>'
@@ -270,7 +337,7 @@ class VNOJContestFormat(DefaultContestFormat):
                 pending=pending,
             )
         else:
-            return mark_safe('<td></td>')
+            return mark_safe("<td></td>")
 
     def display_participation_result(self, participation, frozen=False):
         if frozen:
@@ -281,38 +348,54 @@ class VNOJContestFormat(DefaultContestFormat):
             cumtime = participation.cumtime
         return format_html(
             '<td class="user-points"><a href="{url}">{points}<div class="solving-time">{cumtime}</div></a></td>',
-            url=reverse('contest_all_user_submissions',
-                        args=[self.contest.key, participation.user.user.username]),
+            url=reverse(
+                "contest_all_user_submissions",
+                args=[self.contest.key, participation.user.user.username],
+            ),
             points=floatformat(points, -self.contest.points_precision),
-            cumtime=nice_repr(timedelta(seconds=cumtime), 'noday'),
+            cumtime=nice_repr(timedelta(seconds=cumtime), "noday"),
         )
 
     def get_short_form_display(self):
-        yield _('The maximum score submission for each problem will be used.')
+        yield _("The maximum score submission for each problem will be used.")
 
-        penalty = self.config['penalty']
+        penalty = self.config["penalty"]
         if penalty:
-            yield ngettext(
-                'Each submission before the first maximum score submission will incur a **penalty of %d minute**.',
-                'Each submission before the first maximum score submission will incur a **penalty of %d minutes**.',
-                penalty,
-            ) % penalty
-            if self.config['LSO']:
-                yield _('Ties will be broken by the time of the last score altering submission (including penalty).')
+            yield (
+                ngettext(
+                    "Each submission before the first maximum score submission will incur a **penalty of %d minute**.",
+                    "Each submission before the first maximum score submission will incur a **penalty of %d minutes**.",
+                    penalty,
+                )
+                % penalty
+            )
+            if self.config["LSO"]:
+                yield _(
+                    "Ties will be broken by the time of the last score altering submission (including penalty)."
+                )
             else:
-                yield _('Ties will be broken by the sum of the last score altering submission time on problems with '
-                        'a non-zero score (including penalty), followed by the time of the last score altering '
-                        'submission.')
+                yield _(
+                    "Ties will be broken by the sum of the last score altering submission time on problems with "
+                    "a non-zero score (including penalty), followed by the time of the last score altering "
+                    "submission."
+                )
         else:
-            if self.config['LSO']:
-                yield _('Ties will be broken by the time of the last score altering submission.')
+            if self.config["LSO"]:
+                yield _(
+                    "Ties will be broken by the time of the last score altering submission."
+                )
             else:
-                yield _('Ties will be broken by the sum of the last score altering submission time on problems with '
-                        'a non-zero score, followed by the time of the last score altering submission.')
+                yield _(
+                    "Ties will be broken by the sum of the last score altering submission time on problems with "
+                    "a non-zero score, followed by the time of the last score altering submission."
+                )
 
         if self.contest.frozen_last_minutes:
-            yield ngettext(
-                'The scoreboard will be frozen in the **last %d minute**.',
-                'The scoreboard will be frozen in the **last %d minutes**.',
-                self.contest.frozen_last_minutes,
-            ) % self.contest.frozen_last_minutes
+            yield (
+                ngettext(
+                    "The scoreboard will be frozen in the **last %d minute**.",
+                    "The scoreboard will be frozen in the **last %d minutes**.",
+                    self.contest.frozen_last_minutes,
+                )
+                % self.contest.frozen_last_minutes
+            )

@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0127_Add_contribution_points_and_misc'),
+        ("judge", "0127_Add_contribution_points_and_misc"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='ticket',
-            name='is_contributive',
-            field=models.BooleanField(default=False, verbose_name='is ticket contributive?'),
+            model_name="ticket",
+            name="is_contributive",
+            field=models.BooleanField(
+                default=False, verbose_name="is ticket contributive?"
+            ),
         ),
     ]

@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0130_contest_virtual_count'),
-        ('judge', '0118_convert_to_dates'),
+        ("judge", "0130_contest_virtual_count"),
+        ("judge", "0118_convert_to_dates"),
     ]
 
-    operations = [
-    ]
+    operations = []

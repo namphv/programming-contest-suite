@@ -19,8 +19,17 @@ from django.urls import reverse
 from django.utils import timezone, translation
 from lxml import etree as ET
 
-from judge.models import Language, Problem, ProblemData, ProblemGroup, ProblemTestCase, ProblemTranslation, \
-    ProblemType, Profile, Solution
+from judge.models import (
+    Language,
+    Problem,
+    ProblemData,
+    ProblemGroup,
+    ProblemTestCase,
+    ProblemTranslation,
+    ProblemType,
+    Profile,
+    Solution,
+)
 from judge.utils.problem_data import ProblemDataCompiler
 from judge.views.widgets import django_uploader
 
@@ -194,133 +203,157 @@ TEX_MACROS = r"""
 def pandoc_tex_to_markdown(tex):
     tex = TEX_MACROS + tex
     with tempfile.TemporaryDirectory() as tmp_dir:
-        with open(os.path.join(tmp_dir, 'temp.tex'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(tmp_dir, "temp.tex"), "w", encoding="utf-8") as f:
             f.write(tex)
 
-        with open(os.path.join(tmp_dir, 'filter.lua'), 'w', encoding='utf-8') as f:
+        with open(os.path.join(tmp_dir, "filter.lua"), "w", encoding="utf-8") as f:
             f.write(PANDOC_FILTER)
 
         subprocess.run(
-            ['pandoc', '--lua-filter=filter.lua', '-t', 'gfm', '-o', 'temp.md', 'temp.tex'],
+            [
+                "pandoc",
+                "--lua-filter=filter.lua",
+                "-t",
+                "gfm",
+                "-o",
+                "temp.md",
+                "temp.tex",
+            ],
             cwd=tmp_dir,
             check=True,
         )
 
-        with open(os.path.join(tmp_dir, 'temp.md'), 'r', encoding='utf-8') as f:
+        with open(os.path.join(tmp_dir, "temp.md"), "r", encoding="utf-8") as f:
             md = f.read()
 
     return md
 
 
 def pandoc_get_version():
-    parts = subprocess.check_output(['pandoc', '--version']).decode().splitlines()[0].split(' ')[1].split('.')
+    parts = (
+        subprocess.check_output(["pandoc", "--version"])
+        .decode()
+        .splitlines()[0]
+        .split(" ")[1]
+        .split(".")
+    )
     return tuple(map(int, parts))
 
 
 def parse_assets(problem_meta, root, package):
     # Parse interactor
-    interactor = root.find('.//interactor')
+    interactor = root.find(".//interactor")
     if interactor is None:
-        print('Use standard grader')
-        problem_meta['grader'] = 'standard'
+        print("Use standard grader")
+        problem_meta["grader"] = "standard"
     else:
-        print('Found interactor')
-        print('Use interactive grader')
-        problem_meta['grader'] = 'interactive'
-        problem_meta['custom_grader'] = os.path.join(problem_meta['tmp_dir'].name, 'interactor.cpp')
+        print("Found interactor")
+        print("Use interactive grader")
+        problem_meta["grader"] = "interactive"
+        problem_meta["custom_grader"] = os.path.join(
+            problem_meta["tmp_dir"].name, "interactor.cpp"
+        )
 
-        source = interactor.find('source')
+        source = interactor.find("source")
         if source is None:
-            raise CommandError('interactor source not found. how possible?')
+            raise CommandError("interactor source not found. how possible?")
 
-        path = source.get('path')
-        if not path.lower().endswith('.cpp'):
-            raise CommandError('interactor must use C++')
+        path = source.get("path")
+        if not path.lower().endswith(".cpp"):
+            raise CommandError("interactor must use C++")
 
-        with open(problem_meta['custom_grader'], 'wb') as f:
+        with open(problem_meta["custom_grader"], "wb") as f:
             f.write(package.read(path))
 
-        print('NOTE: checker is ignored when using interactive grader')
-        print('If you use custom checker, please merge it with the interactor')
-        problem_meta['checker'] = 'standard'
+        print("NOTE: checker is ignored when using interactive grader")
+        print("If you use custom checker, please merge it with the interactor")
+        problem_meta["checker"] = "standard"
         return
 
     # Parse checker
-    checker = root.find('.//checker')
+    checker = root.find(".//checker")
     if checker is None:
-        raise CommandError('checker not found')
+        raise CommandError("checker not found")
 
-    if checker.get('type') != 'testlib':
-        raise CommandError('not a testlib checker. how possible?')
+    if checker.get("type") != "testlib":
+        raise CommandError("not a testlib checker. how possible?")
 
-    checker_name = checker.get('name')
+    checker_name = checker.get("name")
     if checker_name is None:
-        problem_meta['checker'] = 'bridged'
+        problem_meta["checker"] = "bridged"
     else:
-        if checker_name in ['std::hcmp.cpp', 'std::ncmp.cpp', 'std::wcmp.cpp']:
-            problem_meta['checker'] = 'standard'
-            print('Use standard checker')
-        elif checker_name in ['std::rcmp4.cpp', 'std::rcmp6.cpp', 'std::rcmp9.cpp']:
-            problem_meta['checker'] = 'floats'
-            problem_meta['checker_args'] = {'precision': int(checker_name[9])}
-            print(f'Use floats checker with precision {problem_meta["checker_args"]["precision"]}')
-        elif checker_name == 'std::fcmp.cpp':
-            problem_meta['checker'] = 'identical'
-            print('Use identical checker')
-        elif checker_name == 'std::lcmp.cpp':
-            problem_meta['checker'] = 'linecount'
-            print('Use linecount checker')
+        if checker_name in ["std::hcmp.cpp", "std::ncmp.cpp", "std::wcmp.cpp"]:
+            problem_meta["checker"] = "standard"
+            print("Use standard checker")
+        elif checker_name in ["std::rcmp4.cpp", "std::rcmp6.cpp", "std::rcmp9.cpp"]:
+            problem_meta["checker"] = "floats"
+            problem_meta["checker_args"] = {"precision": int(checker_name[9])}
+            print(
+                f"Use floats checker with precision {problem_meta['checker_args']['precision']}"
+            )
+        elif checker_name == "std::fcmp.cpp":
+            problem_meta["checker"] = "identical"
+            print("Use identical checker")
+        elif checker_name == "std::lcmp.cpp":
+            problem_meta["checker"] = "linecount"
+            print("Use linecount checker")
         else:
-            problem_meta['checker'] = 'bridged'
+            problem_meta["checker"] = "bridged"
 
-    if problem_meta['checker'] == 'bridged':
-        print('Use custom checker')
+    if problem_meta["checker"] == "bridged":
+        print("Use custom checker")
 
-        source = checker.find('source')
+        source = checker.find("source")
         if source is None:
-            raise CommandError('checker source not found. how possible?')
+            raise CommandError("checker source not found. how possible?")
 
         # TODO: support more checkers?
-        path = source.get('path')
-        if not path.lower().endswith('.cpp'):
-            raise CommandError('checker must use C++')
+        path = source.get("path")
+        if not path.lower().endswith(".cpp"):
+            raise CommandError("checker must use C++")
 
-        problem_meta['checker_args'] = {
-            'files': 'checker.cpp',
-            'lang': 'CPP17',
-            'type': 'testlib',
+        problem_meta["checker_args"] = {
+            "files": "checker.cpp",
+            "lang": "CPP17",
+            "type": "testlib",
         }
 
-        problem_meta['custom_checker'] = os.path.join(problem_meta['tmp_dir'].name, 'checker.cpp')
-        with open(problem_meta['custom_checker'], 'wb') as f:
+        problem_meta["custom_checker"] = os.path.join(
+            problem_meta["tmp_dir"].name, "checker.cpp"
+        )
+        with open(problem_meta["custom_checker"], "wb") as f:
             f.write(package.read(path))
 
 
 def parse_tests(problem_meta, root, package):
     testset = root.find('.//testset[@name="tests"]')
     if testset is None:
-        raise CommandError('testset tests not found')
+        raise CommandError("testset tests not found")
 
-    if len(testset.find('tests').getchildren()) == 0:
-        raise CommandError('no testcases found')
+    if len(testset.find("tests").getchildren()) == 0:
+        raise CommandError("no testcases found")
 
     # Polygon specifies the time limit in ms and memory limit in bytes,
     # while DMOJ uses seconds and kilobytes.
-    problem_meta['time_limit'] = float(testset.find('time-limit').text) / 1000
-    problem_meta['memory_limit'] = int(testset.find('memory-limit').text) // 1024
+    problem_meta["time_limit"] = float(testset.find("time-limit").text) / 1000
+    problem_meta["memory_limit"] = int(testset.find("memory-limit").text) // 1024
 
-    if hasattr(settings, 'DMOJ_PROBLEM_MIN_MEMORY_LIMIT'):
-        problem_meta['memory_limit'] = max(problem_meta['memory_limit'], settings.DMOJ_PROBLEM_MIN_MEMORY_LIMIT)
-    if hasattr(settings, 'DMOJ_PROBLEM_MAX_MEMORY_LIMIT'):
-        problem_meta['memory_limit'] = min(problem_meta['memory_limit'], settings.DMOJ_PROBLEM_MAX_MEMORY_LIMIT)
+    if hasattr(settings, "DMOJ_PROBLEM_MIN_MEMORY_LIMIT"):
+        problem_meta["memory_limit"] = max(
+            problem_meta["memory_limit"], settings.DMOJ_PROBLEM_MIN_MEMORY_LIMIT
+        )
+    if hasattr(settings, "DMOJ_PROBLEM_MAX_MEMORY_LIMIT"):
+        problem_meta["memory_limit"] = min(
+            problem_meta["memory_limit"], settings.DMOJ_PROBLEM_MAX_MEMORY_LIMIT
+        )
 
-    print(f'Time limit: {problem_meta["time_limit"]}s')
-    print(f'Memory limit: {problem_meta["memory_limit"] // 1024}MB')
+    print(f"Time limit: {problem_meta['time_limit']}s")
+    print(f"Memory limit: {problem_meta['memory_limit'] // 1024}MB")
 
-    problem_meta['cases_data'] = []
-    problem_meta['batches'] = {}
-    problem_meta['normal_cases'] = []
-    problem_meta['zipfile'] = os.path.join(problem_meta['tmp_dir'].name, 'tests.zip')
+    problem_meta["cases_data"] = []
+    problem_meta["batches"] = {}
+    problem_meta["normal_cases"] = []
+    problem_meta["zipfile"] = os.path.join(problem_meta["tmp_dir"].name, "tests.zip")
 
     # Tests can be aggregated into batches (called groups in Polygon).
     # Each batch can have one of two point policies:
@@ -338,174 +371,188 @@ def parse_tests(problem_meta, root, package):
     # (Technically, we could support dependencies for each-test batch by splitting it
     # into multiple complete-group batches, but that's too complicated)
 
-    groups = testset.find('groups')
+    groups = testset.find("groups")
     if groups is not None:
         for group in groups.getchildren():
-            name = group.get('name')
-            points = float(group.get('points', 0))
-            points_policy = group.get('points-policy')
-            dependencies = group.find('dependencies')
+            name = group.get("name")
+            points = float(group.get("points", 0))
+            points_policy = group.get("points-policy")
+            dependencies = group.find("dependencies")
             if dependencies is None:
                 dependencies = []
             else:
-                dependencies = [d.get('group') for d in dependencies.getchildren()]
+                dependencies = [d.get("group") for d in dependencies.getchildren()]
 
-            assert points_policy in ['complete-group', 'each-test']
-            if points_policy == 'each-test' and len(dependencies) > 0:
-                raise CommandError('dependencies are only supported for batches with complete-group point policy')
+            assert points_policy in ["complete-group", "each-test"]
+            if points_policy == "each-test" and len(dependencies) > 0:
+                raise CommandError(
+                    "dependencies are only supported for batches with complete-group point policy"
+                )
 
-            problem_meta['batches'][name] = {
-                'name': name,
-                'points': points,
-                'points_policy': points_policy,
-                'dependencies': dependencies,
-                'cases': [],
+            problem_meta["batches"][name] = {
+                "name": name,
+                "points": points,
+                "points_policy": points_policy,
+                "dependencies": dependencies,
+                "cases": [],
             }
 
-    with zipfile.ZipFile(problem_meta['zipfile'], 'w') as tests_zip:
-        input_path_pattern = testset.find('input-path-pattern').text
-        answer_path_pattern = testset.find('answer-path-pattern').text
-        for i, test in enumerate(testset.find('tests').getchildren()):
-            points = float(test.get('points', 0))
+    with zipfile.ZipFile(problem_meta["zipfile"], "w") as tests_zip:
+        input_path_pattern = testset.find("input-path-pattern").text
+        answer_path_pattern = testset.find("answer-path-pattern").text
+        for i, test in enumerate(testset.find("tests").getchildren()):
+            points = float(test.get("points", 0))
             input_path = input_path_pattern % (i + 1)
             answer_path = answer_path_pattern % (i + 1)
-            input_file = f'{(i + 1):02d}.inp'
-            output_file = f'{(i + 1):02d}.out'
+            input_file = f"{(i + 1):02d}.inp"
+            output_file = f"{(i + 1):02d}.out"
 
             tests_zip.writestr(input_file, package.read(input_path))
             tests_zip.writestr(output_file, package.read(answer_path))
 
-            problem_meta['cases_data'].append({
-                'index': i,
-                'input_file': input_file,
-                'output_file': output_file,
-                'points': points,
-            })
+            problem_meta["cases_data"].append(
+                {
+                    "index": i,
+                    "input_file": input_file,
+                    "output_file": output_file,
+                    "points": points,
+                }
+            )
 
-            group = test.get('group', '')
-            if group in problem_meta['batches']:
-                problem_meta['batches'][group]['cases'].append(i)
+            group = test.get("group", "")
+            if group in problem_meta["batches"]:
+                problem_meta["batches"][group]["cases"].append(i)
             else:
-                problem_meta['normal_cases'].append(i)
+                problem_meta["normal_cases"].append(i)
 
     def get_tests_by_batch(name):
-        batch = problem_meta['batches'][name]
+        batch = problem_meta["batches"][name]
 
-        if len(batch['dependencies']) == 0:
-            return batch['cases']
+        if len(batch["dependencies"]) == 0:
+            return batch["cases"]
 
         # Polygon guarantees no cycles
-        cases = set(batch['cases'])
-        for dependency in batch['dependencies']:
+        cases = set(batch["cases"])
+        for dependency in batch["dependencies"]:
             cases.update(get_tests_by_batch(dependency))
 
-        batch['dependencies'] = []
-        batch['cases'] = list(cases)
-        return batch['cases']
+        batch["dependencies"] = []
+        batch["cases"] = list(cases)
+        return batch["cases"]
 
     each_test_batches = []
-    for batch in problem_meta['batches'].values():
-        if batch['points_policy'] == 'each-test':
-            each_test_batches.append(batch['name'])
-            problem_meta['normal_cases'] += batch['cases']
+    for batch in problem_meta["batches"].values():
+        if batch["points_policy"] == "each-test":
+            each_test_batches.append(batch["name"])
+            problem_meta["normal_cases"] += batch["cases"]
             continue
 
-        batch['cases'] = get_tests_by_batch(batch['name'])
+        batch["cases"] = get_tests_by_batch(batch["name"])
 
     for batch in each_test_batches:
-        del problem_meta['batches'][batch]
+        del problem_meta["batches"][batch]
 
     # Normalize points if necessary
     # Polygon allows fractional points, but DMOJ does not
-    all_points = [batch['points'] for batch in problem_meta['batches'].values()] + \
-                 [problem_meta['cases_data'][i]['points'] for i in problem_meta['normal_cases']]
+    all_points = [batch["points"] for batch in problem_meta["batches"].values()] + [
+        problem_meta["cases_data"][i]["points"] for i in problem_meta["normal_cases"]
+    ]
     if any(not p.is_integer() for p in all_points):
-        print('Found fractional points. Normalize to integers')
+        print("Found fractional points. Normalize to integers")
         all_points = [int(p * 1000) for p in all_points]
         gcd = math.gcd(*all_points)
-        for batch in problem_meta['batches'].values():
-            batch['points'] = int(batch['points'] * 1000) // gcd
-        for i in problem_meta['normal_cases']:
-            case_data = problem_meta['cases_data'][i]
-            case_data['points'] = int(case_data['points'] * 1000) // gcd
+        for batch in problem_meta["batches"].values():
+            batch["points"] = int(batch["points"] * 1000) // gcd
+        for i in problem_meta["normal_cases"]:
+            case_data = problem_meta["cases_data"][i]
+            case_data["points"] = int(case_data["points"] * 1000) // gcd
 
     # Ignore zero-point batches
-    zero_point_batches = [name for name, batch in problem_meta['batches'].items() if batch['points'] == 0]
+    zero_point_batches = [
+        name for name, batch in problem_meta["batches"].items() if batch["points"] == 0
+    ]
     if len(zero_point_batches) > 0:
-        print('Found zero-point batches:', ', '.join(zero_point_batches))
-        print('Would you like ignore them (y/n)? ', end='', flush=True)
-        if input().lower() in ['y', 'yes']:
-            problem_meta['batches'] = {
-                name: batch for name, batch in problem_meta['batches'].items() if batch['points'] > 0
+        print("Found zero-point batches:", ", ".join(zero_point_batches))
+        print("Would you like ignore them (y/n)? ", end="", flush=True)
+        if input().lower() in ["y", "yes"]:
+            problem_meta["batches"] = {
+                name: batch
+                for name, batch in problem_meta["batches"].items()
+                if batch["points"] > 0
             }
-            print(f'Ignored {len(zero_point_batches)} zero-point batches')
+            print(f"Ignored {len(zero_point_batches)} zero-point batches")
 
     # Sort tests by index
-    problem_meta['normal_cases'].sort()
-    for batch in problem_meta['batches'].values():
-        batch['cases'].sort()
+    problem_meta["normal_cases"].sort()
+    for batch in problem_meta["batches"].values():
+        batch["cases"].sort()
 
-    print(f'Found {len(testset.find("tests").getchildren())} tests!')
-    print(f'Parsed as {len(problem_meta["batches"])} batches and {len(problem_meta["normal_cases"])} normal tests!')
+    print(f"Found {len(testset.find('tests').getchildren())} tests!")
+    print(
+        f"Parsed as {len(problem_meta['batches'])} batches and {len(problem_meta['normal_cases'])} normal tests!"
+    )
 
-    total_points = (sum(b['points'] for b in problem_meta['batches'].values()) +
-                    sum(problem_meta['cases_data'][i]['points'] for i in problem_meta['normal_cases']))
+    total_points = sum(b["points"] for b in problem_meta["batches"].values()) + sum(
+        problem_meta["cases_data"][i]["points"] for i in problem_meta["normal_cases"]
+    )
     if total_points == 0:
-        print('Total points is zero. Set partial to False')
-        problem_meta['partial'] = False
+        print("Total points is zero. Set partial to False")
+        problem_meta["partial"] = False
     else:
-        print('Total points is non-zero. Set partial to True')
-        problem_meta['partial'] = True
+        print("Total points is non-zero. Set partial to True")
+        problem_meta["partial"] = True
 
-    problem_meta['grader_args'] = {}
-    judging = root.find('.//judging')
+    problem_meta["grader_args"] = {}
+    judging = root.find(".//judging")
     if judging is not None:
-        io_input_file = judging.get('input-file', '')
-        io_output_file = judging.get('output-file', '')
+        io_input_file = judging.get("input-file", "")
+        io_output_file = judging.get("output-file", "")
 
-        if io_input_file != '' and io_output_file != '':
-            print('Use File IO')
-            print('Input file:', io_input_file)
-            print('Output file:', io_output_file)
-            problem_meta['grader_args']['io_method'] = 'file'
-            problem_meta['grader_args']['io_input_file'] = io_input_file
-            problem_meta['grader_args']['io_output_file'] = io_output_file
+        if io_input_file != "" and io_output_file != "":
+            print("Use File IO")
+            print("Input file:", io_input_file)
+            print("Output file:", io_output_file)
+            problem_meta["grader_args"]["io_method"] = "file"
+            problem_meta["grader_args"]["io_input_file"] = io_input_file
+            problem_meta["grader_args"]["io_output_file"] = io_output_file
 
 
 def parse_statements(problem_meta, root, package):
     # Set default values
-    problem_meta['name'] = ''
-    problem_meta['description'] = ''
-    problem_meta['translations'] = []
-    problem_meta['tutorial'] = ''
+    problem_meta["name"] = ""
+    problem_meta["description"] = ""
+    problem_meta["translations"] = []
+    problem_meta["tutorial"] = ""
 
     def process_images(text):
-        image_cache = problem_meta['image_cache']
+        image_cache = problem_meta["image_cache"]
 
         def save_image(image_path):
             norm_path = os.path.normpath(os.path.join(statement_folder, image_path))
             sha1 = hashlib.sha1()
-            sha1.update(package.open(norm_path, 'r').read())
+            sha1.update(package.open(norm_path, "r").read())
             sha1 = sha1.hexdigest()
 
             if sha1 not in image_cache:
                 image = File(
-                    file=package.open(norm_path, 'r'),
+                    file=package.open(norm_path, "r"),
                     name=os.path.basename(image_path),
                 )
                 data = json.loads(django_uploader(image))
-                image_cache[sha1] = data['link']
+                image_cache[sha1] = data["link"]
 
             return image_cache[sha1]
 
-        for image_path in set(re.findall(r'!\[image\]\((.+?)\)', text)):
+        for image_path in set(re.findall(r"!\[image\]\((.+?)\)", text)):
             text = text.replace(
-                f'![image]({image_path})',
-                f'![image]({save_image(image_path)})',
+                f"![image]({image_path})",
+                f"![image]({save_image(image_path)})",
             )
 
-        for img_tag in set(re.findall(r'<\s*img[^>]*>', text)):
-            image_path = re.search(r'<\s*img[^>]+src\s*=\s*(["\'])(.*?)\1[^>]*>', img_tag).group(2)
+        for img_tag in set(re.findall(r"<\s*img[^>]*>", text)):
+            image_path = re.search(
+                r'<\s*img[^>]+src\s*=\s*(["\'])(.*?)\1[^>]*>', img_tag
+            ).group(2)
             text = text.replace(
                 img_tag,
                 img_tag.replace(image_path, save_image(image_path)),
@@ -514,40 +561,40 @@ def parse_statements(problem_meta, root, package):
         return text
 
     def parse_problem_properties(problem_properties):
-        description = ''
+        description = ""
 
         # Legend
-        description += pandoc_tex_to_markdown(problem_properties['legend'])
+        description += pandoc_tex_to_markdown(problem_properties["legend"])
 
         # Input
-        description += '\n## Input\n\n'
-        description += pandoc_tex_to_markdown(problem_properties['input'])
+        description += "\n## Input\n\n"
+        description += pandoc_tex_to_markdown(problem_properties["input"])
 
         # Output
-        description += '\n## Output\n\n'
-        description += pandoc_tex_to_markdown(problem_properties['output'])
+        description += "\n## Output\n\n"
+        description += pandoc_tex_to_markdown(problem_properties["output"])
 
         # Interaction
-        if problem_properties['interaction'] is not None:
-            description += '\n## Interaction\n\n'
-            description += pandoc_tex_to_markdown(problem_properties['interaction'])
+        if problem_properties["interaction"] is not None:
+            description += "\n## Interaction\n\n"
+            description += pandoc_tex_to_markdown(problem_properties["interaction"])
 
         # Scoring
-        if problem_properties['scoring'] is not None:
-            description += '\n## Scoring\n\n'
-            description += pandoc_tex_to_markdown(problem_properties['scoring'])
+        if problem_properties["scoring"] is not None:
+            description += "\n## Scoring\n\n"
+            description += pandoc_tex_to_markdown(problem_properties["scoring"])
 
         # Sample tests
-        for i, sample in enumerate(problem_properties['sampleTests'], start=1):
-            description += f'\n## Sample Input {i}\n\n'
-            description += '```\n' + sample['input'].strip() + '\n```\n'
-            description += f'\n## Sample Output {i}\n\n'
-            description += '```\n' + sample['output'].strip() + '\n```\n'
+        for i, sample in enumerate(problem_properties["sampleTests"], start=1):
+            description += f"\n## Sample Input {i}\n\n"
+            description += "```\n" + sample["input"].strip() + "\n```\n"
+            description += f"\n## Sample Output {i}\n\n"
+            description += "```\n" + sample["output"].strip() + "\n```\n"
 
         # Notes
-        if problem_properties['notes'] != '':
-            description += '\n## Notes\n\n'
-            description += pandoc_tex_to_markdown(problem_properties['notes'])
+        if problem_properties["notes"] != "":
+            description += "\n## Notes\n\n"
+            description += pandoc_tex_to_markdown(problem_properties["notes"])
 
         return description
 
@@ -557,254 +604,284 @@ def parse_statements(problem_meta, root, package):
             if choice in choices:
                 return choice
             else:
-                print('Invalid choice')
+                print("Invalid choice")
 
     statements = root.findall('.//statement[@type="application/x-tex"]')
     if len(statements) == 0:
-        print('Statement not found! Would you like to skip statement (y/n)? ', end='', flush=True)
-        if input().lower() in ['y', 'yes']:
+        print(
+            "Statement not found! Would you like to skip statement (y/n)? ",
+            end="",
+            flush=True,
+        )
+        if input().lower() in ["y", "yes"]:
             return
 
-        raise CommandError('statement not found')
+        raise CommandError("statement not found")
 
     translations = []
     tutorials = []
     for statement in statements:
-        language = statement.get('language', 'unknown')
-        statement_folder = os.path.dirname(statement.get('path'))
-        problem_properties_path = os.path.join(statement_folder, 'problem-properties.json')
+        language = statement.get("language", "unknown")
+        statement_folder = os.path.dirname(statement.get("path"))
+        problem_properties_path = os.path.join(
+            statement_folder, "problem-properties.json"
+        )
         if problem_properties_path not in package.namelist():
-            raise CommandError(f'problem-properties.json not found at path {problem_properties_path}')
+            raise CommandError(
+                f"problem-properties.json not found at path {problem_properties_path}"
+            )
 
-        problem_properties = json.loads(package.read(problem_properties_path).decode('utf-8'))
+        problem_properties = json.loads(
+            package.read(problem_properties_path).decode("utf-8")
+        )
 
-        print(f'Converting statement in language {language} to Markdown')
+        print(f"Converting statement in language {language} to Markdown")
         description = parse_problem_properties(problem_properties)
-        translations.append({
-            'language': language,
-            'description': process_images(description),
-        })
+        translations.append(
+            {
+                "language": language,
+                "description": process_images(description),
+            }
+        )
 
-        tutorial = problem_properties['tutorial']
-        if isinstance(tutorial, str) and tutorial != '':
-            print(f'Converting tutorial in language {language} to Markdown')
+        tutorial = problem_properties["tutorial"]
+        if isinstance(tutorial, str) and tutorial != "":
+            print(f"Converting tutorial in language {language} to Markdown")
             tutorial = pandoc_tex_to_markdown(tutorial)
-            tutorials.append({
-                'language': language,
-                'tutorial': tutorial,
-            })
+            tutorials.append(
+                {
+                    "language": language,
+                    "tutorial": tutorial,
+                }
+            )
 
     if len(translations) > 1:
-        languages = [t['language'] for t in translations]
-        print('Multilingual statements found:', languages)
-        main_language = input_choice('Please select one as the main statement: ', languages)
+        languages = [t["language"] for t in translations]
+        print("Multilingual statements found:", languages)
+        main_language = input_choice(
+            "Please select one as the main statement: ", languages
+        )
     else:
-        main_language = translations[0]['language']
+        main_language = translations[0]["language"]
 
     if len(tutorials) > 1:
-        languages = [t['language'] for t in tutorials]
-        print('Multilingual tutorials found:', languages)
-        main_language = input_choice('Please select one as the sole tutorial: ', languages)
-        problem_meta['tutorial'] = next(t for t in tutorials if t['language'] == main_language)['tutorial']
+        languages = [t["language"] for t in tutorials]
+        print("Multilingual tutorials found:", languages)
+        main_language = input_choice(
+            "Please select one as the sole tutorial: ", languages
+        )
+        problem_meta["tutorial"] = next(
+            t for t in tutorials if t["language"] == main_language
+        )["tutorial"]
     elif len(tutorials) > 0:
-        problem_meta['tutorial'] = tutorials[0]['tutorial']
+        problem_meta["tutorial"] = tutorials[0]["tutorial"]
 
     # Process images for only the selected tutorial
-    problem_meta['tutorial'] = process_images(problem_meta['tutorial'])
+    problem_meta["tutorial"] = process_images(problem_meta["tutorial"])
 
     for t in translations:
-        language = t['language']
-        description = t['description']
+        language = t["language"]
+        description = t["description"]
         name_element = root.find(f'.//name[@language="{language}"]')
-        name = name_element.get('value') if name_element is not None else ''
+        name = name_element.get("value") if name_element is not None else ""
 
         if language == main_language:
-            problem_meta['name'] = name
-            problem_meta['description'] = description
+            problem_meta["name"] = name
+            problem_meta["description"] = description
         else:
             choices = list(map(itemgetter(0), settings.LANGUAGES))
             site_language = input_choice(
-                f'Please select corresponding site language for {language} '
-                f'(available options are {", ".join(choices)}): ',
+                f"Please select corresponding site language for {language} "
+                f"(available options are {', '.join(choices)}): ",
                 choices,
             )
-            problem_meta['translations'].append({
-                'language': site_language,
-                'name': name,
-                'description': description,
-            })
+            problem_meta["translations"].append(
+                {
+                    "language": site_language,
+                    "name": name,
+                    "description": description,
+                }
+            )
 
 
 @transaction.atomic
 def create_problem(problem_meta):
-    print('Creating problem in database')
+    print("Creating problem in database")
     problem = Problem(
-        code=problem_meta['code'],
-        name=problem_meta['name'],
-        time_limit=problem_meta['time_limit'],
-        memory_limit=problem_meta['memory_limit'],
-        description=problem_meta['description'],
-        partial=problem_meta['partial'],
-        group=ProblemGroup.objects.order_by('id').first(),  # Uncategorized
+        code=problem_meta["code"],
+        name=problem_meta["name"],
+        time_limit=problem_meta["time_limit"],
+        memory_limit=problem_meta["memory_limit"],
+        description=problem_meta["description"],
+        partial=problem_meta["partial"],
+        group=ProblemGroup.objects.order_by("id").first(),  # Uncategorized
         points=0.0,
     )
     problem.save()
     problem.allowed_languages.set(Language.objects.filter(include_in_problem=True))
-    problem.authors.set(problem_meta['authors'])
-    problem.curators.set(problem_meta['curators'])
-    problem.types.set([ProblemType.objects.order_by('id').first()])  # Uncategorized
+    problem.authors.set(problem_meta["authors"])
+    problem.curators.set(problem_meta["curators"])
+    problem.types.set([ProblemType.objects.order_by("id").first()])  # Uncategorized
     problem.save()
 
-    for tran in problem_meta['translations']:
+    for tran in problem_meta["translations"]:
         ProblemTranslation(
             problem=problem,
-            language=tran['language'],
-            name=tran['name'],
-            description=tran['description'],
+            language=tran["language"],
+            name=tran["name"],
+            description=tran["description"],
         ).save()
 
-    if problem_meta['tutorial'] != '':
+    if problem_meta["tutorial"] != "":
         Solution(
             problem=problem,
             is_public=False,
             publish_on=timezone.now(),
-            content=problem_meta['tutorial'],
+            content=problem_meta["tutorial"],
         ).save()
 
-    with open(problem_meta['zipfile'], 'rb') as f:
+    with open(problem_meta["zipfile"], "rb") as f:
         problem_data = ProblemData(
             problem=problem,
             zipfile=File(f),
-            grader=problem_meta['grader'],
-            checker=problem_meta['checker'],
-            grader_args=json.dumps(problem_meta['grader_args']),
+            grader=problem_meta["grader"],
+            checker=problem_meta["checker"],
+            grader_args=json.dumps(problem_meta["grader_args"]),
         )
         problem_data.save()
 
-    if problem_meta['checker'] == 'bridged':
-        with open(problem_meta['custom_checker'], 'rb') as f:
+    if problem_meta["checker"] == "bridged":
+        with open(problem_meta["custom_checker"], "rb") as f:
             problem_data.custom_checker = File(f)
             problem_data.save()
 
-    if 'checker_args' in problem_meta:
-        problem_data.checker_args = json.dumps(problem_meta['checker_args'])
+    if "checker_args" in problem_meta:
+        problem_data.checker_args = json.dumps(problem_meta["checker_args"])
         problem_data.save()
 
-    if 'custom_grader' in problem_meta:
-        with open(problem_meta['custom_grader'], 'rb') as f:
+    if "custom_grader" in problem_meta:
+        with open(problem_meta["custom_grader"], "rb") as f:
             problem_data.custom_grader = File(f)
             problem_data.save()
 
     order = 0
 
-    for batch in problem_meta['batches'].values():
-        if len(batch['cases']) == 0:
+    for batch in problem_meta["batches"].values():
+        if len(batch["cases"]) == 0:
             continue
 
         order += 1
-        start_batch = ProblemTestCase(dataset=problem, order=order, type='S', points=batch['points'], is_pretest=False)
+        start_batch = ProblemTestCase(
+            dataset=problem,
+            order=order,
+            type="S",
+            points=batch["points"],
+            is_pretest=False,
+        )
         start_batch.save()
 
-        for case_index in batch['cases']:
+        for case_index in batch["cases"]:
             order += 1
-            case_data = problem_meta['cases_data'][case_index]
+            case_data = problem_meta["cases_data"][case_index]
             case = ProblemTestCase(
                 dataset=problem,
                 order=order,
-                type='C',
-                input_file=case_data['input_file'],
-                output_file=case_data['output_file'],
+                type="C",
+                input_file=case_data["input_file"],
+                output_file=case_data["output_file"],
                 is_pretest=False,
             )
             case.save()
 
         order += 1
-        end_batch = ProblemTestCase(dataset=problem, order=order, type='E', is_pretest=False)
+        end_batch = ProblemTestCase(
+            dataset=problem, order=order, type="E", is_pretest=False
+        )
         end_batch.save()
 
-    for case_index in problem_meta['normal_cases']:
+    for case_index in problem_meta["normal_cases"]:
         order += 1
-        case_data = problem_meta['cases_data'][case_index]
+        case_data = problem_meta["cases_data"][case_index]
         case = ProblemTestCase(
             dataset=problem,
             order=order,
-            type='C',
-            input_file=case_data['input_file'],
-            output_file=case_data['output_file'],
-            points=case_data['points'],
+            type="C",
+            input_file=case_data["input_file"],
+            output_file=case_data["output_file"],
+            points=case_data["points"],
             is_pretest=False,
         )
         case.save()
 
-    print('Generating init.yml')
+    print("Generating init.yml")
     ProblemDataCompiler.generate(
         problem=problem,
         data=problem_data,
-        cases=problem.cases.order_by('order'),
+        cases=problem.cases.order_by("order"),
         files=zipfile.ZipFile(problem_data.zipfile.path).namelist(),
     )
 
 
 class Command(BaseCommand):
-    help = 'import Codeforces Polygon full package'
+    help = "import Codeforces Polygon full package"
 
     def add_arguments(self, parser):
-        parser.add_argument('package', help='path to package in zip format')
-        parser.add_argument('code', help='problem code')
-        parser.add_argument('--authors', help='username of problem author', nargs='*')
-        parser.add_argument('--curators', help='username of problem curator', nargs='*')
+        parser.add_argument("package", help="path to package in zip format")
+        parser.add_argument("code", help="problem code")
+        parser.add_argument("--authors", help="username of problem author", nargs="*")
+        parser.add_argument("--curators", help="username of problem curator", nargs="*")
 
     def handle(self, *args, **options):
         # Force using English
-        translation.activate('en')
+        translation.activate("en")
 
         # Check if pandoc is available
-        if not shutil.which('pandoc'):
-            raise CommandError('pandoc not installed')
+        if not shutil.which("pandoc"):
+            raise CommandError("pandoc not installed")
         if pandoc_get_version() < (3, 0, 0):
-            raise CommandError('pandoc version must be at least 3.0.0')
+            raise CommandError("pandoc version must be at least 3.0.0")
 
         # Let's validate the problem code right now.
         # We don't want to have done everything and still fail because
         # of invalid problem code.
-        problem_code = options['code']
-        Problem._meta.get_field('code').run_validators(problem_code)
+        problem_code = options["code"]
+        Problem._meta.get_field("code").run_validators(problem_code)
         if Problem.objects.filter(code=problem_code).exists():
-            raise CommandError(f'problem with code {problem_code} already exists')
+            raise CommandError(f"problem with code {problem_code} already exists")
 
-        package = zipfile.ZipFile(options['package'], 'r')
-        if 'problem.xml' not in package.namelist():
-            raise CommandError('problem.xml not found')
+        package = zipfile.ZipFile(options["package"], "r")
+        if "problem.xml" not in package.namelist():
+            raise CommandError("problem.xml not found")
 
-        root = ET.fromstring(package.read('problem.xml'))
+        root = ET.fromstring(package.read("problem.xml"))
 
-        problem_authors_args = options['authors'] or []
+        problem_authors_args = options["authors"] or []
         problem_authors = []
         for username in problem_authors_args:
             try:
                 profile = Profile.objects.get(user__username=username)
             except Profile.DoesNotExist:
-                raise CommandError(f'user {username} does not exist')
+                raise CommandError(f"user {username} does not exist")
 
             problem_authors.append(profile)
 
-        problem_curators_args = options['curators'] or []
+        problem_curators_args = options["curators"] or []
         problem_curators = []
         for username in problem_curators_args:
             try:
                 profile = Profile.objects.get(user__username=username)
             except Profile.DoesNotExist:
-                raise CommandError(f'user {username} does not exist')
+                raise CommandError(f"user {username} does not exist")
 
             problem_curators.append(profile)
 
         # A dictionary to hold all problem information.
         problem_meta = {}
-        problem_meta['image_cache'] = {}
-        problem_meta['code'] = problem_code
-        problem_meta['tmp_dir'] = tempfile.TemporaryDirectory()
-        problem_meta['authors'] = problem_authors
-        problem_meta['curators'] = problem_curators
+        problem_meta["image_cache"] = {}
+        problem_meta["code"] = problem_code
+        problem_meta["tmp_dir"] = tempfile.TemporaryDirectory()
+        problem_meta["authors"] = problem_authors
+        problem_meta["curators"] = problem_curators
 
         try:
             parse_assets(problem_meta, root, package)
@@ -813,13 +890,21 @@ class Command(BaseCommand):
             create_problem(problem_meta)
         except Exception:
             # Remove imported images
-            for image_url in problem_meta['image_cache'].values():
-                path = default_storage.path(os.path.join(settings.MARTOR_UPLOAD_MEDIA_DIR, os.path.basename(image_url)))
+            for image_url in problem_meta["image_cache"].values():
+                path = default_storage.path(
+                    os.path.join(
+                        settings.MARTOR_UPLOAD_MEDIA_DIR, os.path.basename(image_url)
+                    )
+                )
                 os.remove(path)
 
             raise
         finally:
-            problem_meta['tmp_dir'].cleanup()
+            problem_meta["tmp_dir"].cleanup()
 
-        problem_url = 'https://' + Site.objects.first().domain + reverse('problem_detail', args=[problem_code])
-        print(f'Imported successfully. View problem at {problem_url}')
+        problem_url = (
+            "https://"
+            + Site.objects.first().domain
+            + reverse("problem_detail", args=[problem_code])
+        )
+        print(f"Imported successfully. View problem at {problem_url}")

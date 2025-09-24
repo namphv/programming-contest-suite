@@ -4,19 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0156_always_hidden_scoreboard'),
+        ("judge", "0156_always_hidden_scoreboard"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='problem',
-            name='banned_judges',
+            model_name="problem",
+            name="banned_judges",
         ),
         migrations.AddField(
-            model_name='contest',
-            name='banned_judges',
-            field=models.ManyToManyField(blank=True, help_text='Bans the selected judges from judging this contest.', to='judge.Judge', verbose_name='Banned judges'),
+            model_name="contest",
+            name="banned_judges",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="Bans the selected judges from judging this contest.",
+                to="judge.Judge",
+                verbose_name="Banned judges",
+            ),
         ),
     ]

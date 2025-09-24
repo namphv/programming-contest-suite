@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0169_alter_contestformat_and_custom_checker'),
+        ("judge", "0169_alter_contestformat_and_custom_checker"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='contest',
-            name='data_last_downloaded',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='last data download time'),
+            model_name="contest",
+            name="data_last_downloaded",
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="last data download time"
+            ),
         ),
     ]

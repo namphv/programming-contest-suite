@@ -5,25 +5,51 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0154_blog_post_org'),
+        ("judge", "0154_blog_post_org"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='contest',
-            name='push_announcements',
-            field=models.BooleanField(default=False, help_text='Notify users when there are new announcements.', verbose_name='push announcements'),
+            model_name="contest",
+            name="push_announcements",
+            field=models.BooleanField(
+                default=False,
+                help_text="Notify users when there are new announcements.",
+                verbose_name="push announcements",
+            ),
         ),
         migrations.CreateModel(
-            name='ContestAnnouncement',
+            name="ContestAnnouncement",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=100, verbose_name='announcement title')),
-                ('description', models.TextField(verbose_name='announcement body')),
-                ('date', models.DateTimeField(auto_now_add=True, verbose_name='announcement timestamp')),
-                ('contest', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='judge.Contest', verbose_name='announced contest')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(max_length=100, verbose_name="announcement title"),
+                ),
+                ("description", models.TextField(verbose_name="announcement body")),
+                (
+                    "date",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="announcement timestamp"
+                    ),
+                ),
+                (
+                    "contest",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="judge.Contest",
+                        verbose_name="announced contest",
+                    ),
+                ),
             ],
         ),
     ]

@@ -5,15 +5,17 @@ import judge.models.problem
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0192_add_registration_fields'),
+        ("judge", "0192_add_registration_fields"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='organization_points',
-            field=models.JSONField(default=dict, help_text='pre-calculate total points on each organization'),
+            model_name="profile",
+            name="organization_points",
+            field=models.JSONField(
+                default=dict,
+                help_text="pre-calculate total points on each organization",
+            ),
         )
     ]

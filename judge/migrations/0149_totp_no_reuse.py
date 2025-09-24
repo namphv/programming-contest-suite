@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0148_add_output_only'),
+        ("judge", "0148_add_output_only"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='last_totp_timecode',
-            field=models.IntegerField(default=0, verbose_name='last TOTP timecode'),
+            model_name="profile",
+            name="last_totp_timecode",
+            field=models.IntegerField(default=0, verbose_name="last TOTP timecode"),
         ),
     ]

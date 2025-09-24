@@ -14,17 +14,23 @@ from judge.models import Contest, GeneralIssue, Problem, Profile
 from judge.ratings import rating_class, rating_progress
 from . import registry
 
-rereference = re.compile(r'\[(r?user):(\w+)\]')
+rereference = re.compile(r"\[(r?user):(\w+)\]")
 
 
 def get_user(username, data):
     if not data:
-        element = Element('span', {'class': 'deleted-user'})
+        element = Element("span", {"class": "deleted-user"})
         element.text = username
         return element
 
-    element = Element('span', {'class': Profile.get_user_css_class(*data)})
-    link = Element('a', {'href': reverse('user_page', args=[username]), 'style': 'display: inline-block;'})
+    element = Element("span", {"class": Profile.get_user_css_class(*data)})
+    link = Element(
+        "a",
+        {
+            "href": reverse("user_page", args=[username]),
+            "style": "display: inline-block;",
+        },
+    )
     link.text = username
     element.append(link)
     return element
@@ -32,17 +38,21 @@ def get_user(username, data):
 
 def get_user_rating(username, data):
     if not data:
-        element = Element('span')
+        element = Element("span")
         element.text = username
         return element
 
     rating = data[1]
-    element = Element('a', {'class': 'rate-group', 'href': reverse('user_page', args=[username])})
+    element = Element(
+        "a", {"class": "rate-group", "href": reverse("user_page", args=[username])}
+    )
     if rating:
         rating_css = rating_class(rating)
-        rate_box = Element('span', {'class': 'rate-box ' + rating_css})
-        rate_box.append(Element('span', {'style': 'height: %3.fem' % rating_progress(rating)}))
-        user = Element('span', {'class': 'rating ' + rating_css})
+        rate_box = Element("span", {"class": "rate-box " + rating_css})
+        rate_box.append(
+            Element("span", {"style": "height: %3.fem" % rating_progress(rating)})
+        )
+        user = Element("span", {"class": "rating " + rating_css})
         user.text = username
         element.append(rate_box)
         element.append(user)
@@ -52,14 +62,17 @@ def get_user_rating(username, data):
 
 
 def get_user_info(usernames):
-    return {name: (rank, rating) for name, rank, rating in
-            Profile.objects.filter(user__username__in=usernames)
-                   .values_list('user__username', 'display_rank', 'rating')}
+    return {
+        name: (rank, rating)
+        for name, rank, rating in Profile.objects.filter(
+            user__username__in=usernames
+        ).values_list("user__username", "display_rank", "rating")
+    }
 
 
 reference_map = {
-    'user': (get_user, get_user_info),
-    'ruser': (get_user_rating, get_user_info),
+    "user": (get_user, get_user_info),
+    "ruser": (get_user_rating, get_user_info),
 }
 
 
@@ -71,9 +84,9 @@ def process_reference(text):
     elements = []
     for piece in rereference.finditer(text):
         if prev is None:
-            tail = text[last:piece.start()]
+            tail = text[last : piece.start()]
         else:
-            prev.append(text[last:piece.start()])
+            prev.append(text[last : piece.start()])
         prev = list(piece.groups())
         elements.append(prev)
         last = piece.end()
@@ -139,7 +152,7 @@ def item_title(item):
         return item.name
     elif isinstance(item, GeneralIssue):
         return item.issue_url
-    return '<Unknown>'
+    return "<Unknown>"
 
 
 @registry.function
@@ -148,53 +161,57 @@ def link_user(user):
         user, profile = user.user, user
     elif isinstance(user, AbstractUser):
         profile = user.profile
-    elif type(user).__name__ == 'ContestRankingProfile':
+    elif type(user).__name__ == "ContestRankingProfile":
         user, profile = user.user, user
     else:
-        raise ValueError('Expected profile or user, got %s' % (type(user),))
+        raise ValueError("Expected profile or user, got %s" % (type(user),))
 
     if isinstance(profile, Profile) and profile.display_badge:
-        display_badge_img = f'<img src="{escape(profile.display_badge.mini)}"' \
-                            f' title="{escape(profile.display_badge.name)}"' \
-                            f' style="height: 1em; width: auto; margin-left: 0.25em;" />'
+        display_badge_img = (
+            f'<img src="{escape(profile.display_badge.mini)}"'
+            f' title="{escape(profile.display_badge.name)}"'
+            f' style="height: 1em; width: auto; margin-left: 0.25em;" />'
+        )
     else:
-        display_badge_img = ''
+        display_badge_img = ""
 
-    return mark_safe(f'<span class="{profile.css_class}">'
-                     f'<a href="{escape(reverse("user_page", args=[user.username]))}"'
-                     f' style="display: inline-block;">'
-                     f'{escape(profile.display_name)}</a>{display_badge_img}</span>')
+    return mark_safe(
+        f'<span class="{profile.css_class}">'
+        f'<a href="{escape(reverse("user_page", args=[user.username]))}"'
+        f' style="display: inline-block;">'
+        f"{escape(profile.display_name)}</a>{display_badge_img}</span>"
+    )
 
 
 @registry.function
-@registry.render_with('user/link-list.html')
+@registry.render_with("user/link-list.html")
 def link_users(users):
-    return {'users': users}
+    return {"users": users}
 
 
 @registry.function
-@registry.render_with('runtime-version-fragment.html')
+@registry.render_with("runtime-version-fragment.html")
 def runtime_versions(versions):
-    return {'runtime_versions': versions}
+    return {"runtime_versions": versions}
 
 
-@registry.filter(name='absolutify')
+@registry.filter(name="absolutify")
 def absolute_links(text, url):
     tree = lxml_tree.fromstring(text)
-    for anchor in tree.xpath('.//a'):
-        href = anchor.get('href')
+    for anchor in tree.xpath(".//a"):
+        href = anchor.get("href")
         if href:
-            anchor.set('href', urljoin(url, href))
+            anchor.set("href", urljoin(url, href))
     return tree
 
 
-@registry.function(name='urljoin')
+@registry.function(name="urljoin")
 def join(first, second, *rest):
     if not rest:
         return urljoin(first, second)
     return urljoin(urljoin(first, second), *rest)
 
 
-@registry.filter(name='ansi2html')
+@registry.filter(name="ansi2html")
 def ansi2html(s):
     return mark_safe(Ansi2HTMLConverter(inline=True).convert(s, full=False))

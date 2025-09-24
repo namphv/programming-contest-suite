@@ -13,14 +13,16 @@ from judge.contest_format.registry import register_contest_format
 from judge.utils.timedelta import nice_repr
 
 
-@register_contest_format('default')
+@register_contest_format("default")
 class DefaultContestFormat(BaseContestFormat):
-    name = gettext_lazy('Default')
+    name = gettext_lazy("Default")
 
     @classmethod
     def validate(cls, config):
         if config is not None and (not isinstance(config, dict) or config):
-            raise ValidationError('default contest expects no config or empty dict as config')
+            raise ValidationError(
+                "default contest expects no config or empty dict as config"
+            )
 
     def __init__(self, contest, config):
         super(DefaultContestFormat, self).__init__(contest, config)
@@ -30,14 +32,18 @@ class DefaultContestFormat(BaseContestFormat):
         points = 0
         format_data = {}
 
-        for result in participation.submissions.values('problem_id').annotate(
-                time=Max('submission__date'), points=Max('points'),
+        for result in participation.submissions.values("problem_id").annotate(
+            time=Max("submission__date"),
+            points=Max("points"),
         ):
-            dt = (result['time'] - participation.start).total_seconds()
-            if result['points']:
+            dt = (result["time"] - participation.start).total_seconds()
+            if result["points"]:
                 cumtime += dt
-            format_data[str(result['problem_id'])] = {'time': dt, 'points': result['points']}
-            points += result['points']
+            format_data[str(result["problem_id"])] = {
+                "time": dt,
+                "points": result["points"],
+            }
+            points += result["points"]
 
         participation.cumtime = max(cumtime, 0)
         participation.score = round(points, self.contest.points_precision)
@@ -58,52 +64,85 @@ class DefaultContestFormat(BaseContestFormat):
             for participation in participations:
                 format_data = (participation.format_data or {}).get(problem_id)
                 if format_data:
-                    points = format_data['points']
-                    time = format_data['time']
+                    points = format_data["points"]
+                    time = format_data["time"]
 
                     if points == problem.points:
                         total_ac[problem_id] += 1
 
                         # Only acknowledge first solves for live participations
-                        if participation.virtual == 0 and (min_time is None or min_time > time):
+                        if participation.virtual == 0 and (
+                            min_time is None or min_time > time
+                        ):
                             min_time = time
                             first_solves[problem_id] = participation.id
 
         return first_solves, total_ac
 
-    def display_user_problem(self, participation, contest_problem, first_solves, frozen=False):
+    def display_user_problem(
+        self, participation, contest_problem, first_solves, frozen=False
+    ):
         format_data = (participation.format_data or {}).get(str(contest_problem.id))
 
         if format_data:
             return format_html(
                 '<td class="{state}"><a href="{url}">{points}<div class="solving-time">{time}</div></a></td>',
-                state=(('pretest-' if self.contest.run_pretests_only and contest_problem.is_pretested else '') +
-                       ('first-solve ' if first_solves.get(str(contest_problem.id), None) == participation.id else '') +
-                       self.best_solution_state(format_data['points'], contest_problem.points)),
-                url=reverse('contest_user_submissions',
-                            args=[self.contest.key, participation.user.user.username, contest_problem.problem.code]),
-                points=floatformat(format_data['points'], -self.contest.points_precision),
-                time=nice_repr(timedelta(seconds=format_data['time']), 'noday'),
+                state=(
+                    (
+                        "pretest-"
+                        if self.contest.run_pretests_only
+                        and contest_problem.is_pretested
+                        else ""
+                    )
+                    + (
+                        "first-solve "
+                        if first_solves.get(str(contest_problem.id), None)
+                        == participation.id
+                        else ""
+                    )
+                    + self.best_solution_state(
+                        format_data["points"], contest_problem.points
+                    )
+                ),
+                url=reverse(
+                    "contest_user_submissions",
+                    args=[
+                        self.contest.key,
+                        participation.user.user.username,
+                        contest_problem.problem.code,
+                    ],
+                ),
+                points=floatformat(
+                    format_data["points"], -self.contest.points_precision
+                ),
+                time=nice_repr(timedelta(seconds=format_data["time"]), "noday"),
             )
         else:
-            return mark_safe('<td></td>')
+            return mark_safe("<td></td>")
 
     def display_participation_result(self, participation, frozen=False):
         return format_html(
             '<td class="user-points"><a href="{url}">{points}<div class="solving-time">{cumtime}</div></a></td>',
-            url=reverse('contest_all_user_submissions',
-                        args=[self.contest.key, participation.user.user.username]),
+            url=reverse(
+                "contest_all_user_submissions",
+                args=[self.contest.key, participation.user.user.username],
+            ),
             points=floatformat(participation.score, -self.contest.points_precision),
-            cumtime=nice_repr(timedelta(seconds=participation.cumtime), 'noday'),
+            cumtime=nice_repr(timedelta(seconds=participation.cumtime), "noday"),
         )
 
     def get_problem_breakdown(self, participation, contest_problems):
-        return [(participation.format_data or {}).get(str(contest_problem.id)) for contest_problem in contest_problems]
+        return [
+            (participation.format_data or {}).get(str(contest_problem.id))
+            for contest_problem in contest_problems
+        ]
 
     def get_label_for_problem(self, index):
         return str(index + 1)
 
     def get_short_form_display(self):
-        yield _('The maximum score submission for each problem will be used.')
-        yield _('Ties will be broken by the sum of the last submission time on problems with '
-                'a non-zero score.')
+        yield _("The maximum score submission for each problem will be used.")
+        yield _(
+            "Ties will be broken by the sum of the last submission time on problems with "
+            "a non-zero score."
+        )

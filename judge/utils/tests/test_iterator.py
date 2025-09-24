@@ -10,7 +10,7 @@ class ChunkTestCase(unittest.TestCase):
 
     def test_normal(self):
         for size in [10, 13, 100, 200]:
-            with self.subTest(f'chunk size {size}'):
+            with self.subTest(f"chunk size {size}"):
                 result = list(chunk(range(100), size))
                 self.assertEqual(list(chain(*result)), list(range(100)))
                 for part in result[:-1]:

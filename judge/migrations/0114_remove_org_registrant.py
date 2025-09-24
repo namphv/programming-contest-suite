@@ -4,7 +4,7 @@ from django.db import migrations
 
 
 def make_admin_registrant(apps, schema_editor):
-    Organization = apps.get_model('judge', 'Organization')
+    Organization = apps.get_model("judge", "Organization")
     db_alias = schema_editor.connection.alias
     for org in Organization.objects.using(db_alias).all():
         org.registrant = org.admins.first()
@@ -12,15 +12,14 @@ def make_admin_registrant(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0113_contest_decimal_points'),
+        ("judge", "0113_contest_decimal_points"),
     ]
 
     operations = [
         migrations.RunPython(migrations.RunPython.noop, make_admin_registrant),
         migrations.RemoveField(
-            model_name='organization',
-            name='registrant',
+            model_name="organization",
+            name="registrant",
         ),
     ]

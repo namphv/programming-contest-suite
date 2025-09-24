@@ -3,8 +3,14 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from judge.models import ContestSubmission, Language, Submission, SubmissionSource
-from judge.models.tests.util import CommonDataMixin, create_contest, create_contest_participation, \
-    create_contest_problem, create_problem, create_user
+from judge.models.tests.util import (
+    CommonDataMixin,
+    create_contest,
+    create_contest_participation,
+    create_contest_problem,
+    create_problem,
+    create_user,
+)
 
 
 class SubmissionTestCase(CommonDataMixin, TestCase):
@@ -12,20 +18,22 @@ class SubmissionTestCase(CommonDataMixin, TestCase):
     def setUpTestData(self):
         super().setUpTestData()
 
-        self.users.update({
-            'staff_submission_view_all': create_user(
-                username='staff_submission_view_all',
-                is_staff=True,
-                user_permissions=('view_all_submission',),
-            ),
-        })
+        self.users.update(
+            {
+                "staff_submission_view_all": create_user(
+                    username="staff_submission_view_all",
+                    is_staff=True,
+                    user_permissions=("view_all_submission",),
+                ),
+            }
+        )
 
         self.basic_submission = Submission.objects.create(
-            user=self.users['normal'].profile,
-            problem=create_problem(code='basic'),
+            user=self.users["normal"].profile,
+            problem=create_problem(code="basic"),
             language=Language.get_python3(),
-            result='AC',
-            status='D',
+            result="AC",
+            status="D",
             case_points=99,
             case_total=100,
             memory=20,
@@ -33,58 +41,58 @@ class SubmissionTestCase(CommonDataMixin, TestCase):
         )
 
         self.full_ac_submission = Submission.objects.create(
-            user=self.users['normal'].profile,
-            problem=create_problem(code='full_ac'),
+            user=self.users["normal"].profile,
+            problem=create_problem(code="full_ac"),
             language=Language.get_python3(),
-            result='AC',
-            status='D',
+            result="AC",
+            status="D",
             case_points=1,
             case_total=1,
         )
         self.full_ac_submission_source = SubmissionSource.objects.create(
             submission=self.full_ac_submission,
-            source='',
+            source="",
         )
 
         self.locked_submission = Submission.objects.create(
-            user=self.users['normal'].profile,
-            problem=create_problem(code='locked'),
+            user=self.users["normal"].profile,
+            problem=create_problem(code="locked"),
             language=Language.get_python3(),
-            result='WA',
-            status='D',
+            result="WA",
+            status="D",
             case_points=1,
             case_total=1,
             locked_after=timezone.now() - timezone.timedelta(days=100),
         )
 
         self.future_locked_submission = Submission.objects.create(
-            user=self.users['normal'].profile,
-            problem=create_problem(code='future_locked'),
+            user=self.users["normal"].profile,
+            problem=create_problem(code="future_locked"),
             language=Language.get_python3(),
-            result='WA',
-            status='D',
+            result="WA",
+            status="D",
             case_points=1,
             case_total=1,
             locked_after=timezone.now() + timezone.timedelta(days=100),
         )
 
         self.ie_submission = Submission.objects.create(
-            user=self.users['superuser'].profile,
+            user=self.users["superuser"].profile,
             problem=create_problem(
-                code='ie',
+                code="ie",
                 is_public=True,
             ),
             language=Language.get_python3(),
-            result='IE',
-            status='IE',
+            result="IE",
+            status="IE",
             memory=None,
         )
 
         # jump down the rabbit hole to attach a contest submission
-        problem = create_problem(code='queued')
-        contest = create_contest(key='queued')
+        problem = create_problem(code="queued")
+        contest = create_contest(key="queued")
         self.queued_submission = Submission.objects.create(
-            user=self.users['superuser'].profile,
+            user=self.users["superuser"].profile,
             problem=problem,
             language=Language.get_python3(),
             contest_object=contest,
@@ -93,15 +101,19 @@ class SubmissionTestCase(CommonDataMixin, TestCase):
         )
         self.queued_contest_submission = ContestSubmission.objects.create(
             submission=self.queued_submission,
-            problem=create_contest_problem(problem=problem, contest=contest, partial=False),
-            participation=create_contest_participation(contest=contest, user='superuser'),
+            problem=create_contest_problem(
+                problem=problem, contest=contest, partial=False
+            ),
+            participation=create_contest_participation(
+                contest=contest, user="superuser"
+            ),
         )
 
     def test_basic_submission(self):
-        self.assertEqual(self.basic_submission.result_class, '_AC')
+        self.assertEqual(self.basic_submission.result_class, "_AC")
         self.assertEqual(self.basic_submission.memory_bytes, 20 * 1024)
-        self.assertEqual(self.basic_submission.short_status, _('AC'))
-        self.assertEqual(self.basic_submission.long_status, _('Accepted'))
+        self.assertEqual(self.basic_submission.short_status, _("AC"))
+        self.assertEqual(self.basic_submission.long_status, _("Accepted"))
         self.assertTrue(self.basic_submission.is_graded)
         self.assertIsNone(self.basic_submission.contest_key)
         self.assertIsNone(self.basic_submission.contest_or_none)
@@ -109,12 +121,12 @@ class SubmissionTestCase(CommonDataMixin, TestCase):
         self.assertFalse(self.basic_submission.is_locked)
 
     def test_full_ac_submission(self):
-        self.assertEqual(self.full_ac_submission.result_class, 'AC')
-        self.assertEqual(self.full_ac_submission.short_status, 'AC')
+        self.assertEqual(self.full_ac_submission.result_class, "AC")
+        self.assertEqual(self.full_ac_submission.short_status, "AC")
 
         self.assertEqual(
             str(self.full_ac_submission_source),
-            'Source of Submission %d of full_ac by normal' % self.full_ac_submission.id,
+            "Source of Submission %d of full_ac by normal" % self.full_ac_submission.id,
         )
 
     def test_submission_lock(self):
@@ -122,7 +134,7 @@ class SubmissionTestCase(CommonDataMixin, TestCase):
         self.assertFalse(self.future_locked_submission.is_locked)
 
     def test_ie_submission(self):
-        self.assertEqual(self.ie_submission.result_class, 'IE')
+        self.assertEqual(self.ie_submission.result_class, "IE")
         self.assertEqual(self.ie_submission.memory_bytes, 0)
         self.assertTrue(self.basic_submission.is_graded)
 
@@ -131,11 +143,11 @@ class SubmissionTestCase(CommonDataMixin, TestCase):
     def test_queued_submission(self):
         self.assertIsNone(self.queued_submission.result_class)
         self.assertEqual(self.queued_submission.memory_bytes, 0)
-        self.assertEqual(self.queued_submission.short_status, 'QU')
-        self.assertEqual(self.queued_submission.long_status, _('Queued'))
+        self.assertEqual(self.queued_submission.short_status, "QU")
+        self.assertEqual(self.queued_submission.long_status, _("Queued"))
         self.assertFalse(self.queued_submission.is_graded)
 
-        self.assertEqual(self.queued_submission.contest_key, 'queued')
+        self.assertEqual(self.queued_submission.contest_key, "queued")
         self.assertIsNotNone(self.queued_submission.contest_or_none)
         self.queued_contest_submission.points = -1000
         self.queued_submission.update_contest()
@@ -143,49 +155,49 @@ class SubmissionTestCase(CommonDataMixin, TestCase):
 
     def test_basic_submission_methods(self):
         data = {
-            'superuser': {
-                'can_see_detail': self.assertTrue,
+            "superuser": {
+                "can_see_detail": self.assertTrue,
             },
-            'staff_problem_edit_own': {
-                'can_see_detail': self.assertFalse,
+            "staff_problem_edit_own": {
+                "can_see_detail": self.assertFalse,
             },
-            'staff_problem_edit_all': {
-                'can_see_detail': self.assertTrue,
+            "staff_problem_edit_all": {
+                "can_see_detail": self.assertTrue,
             },
-            'staff_problem_edit_public': {
-                'can_see_detail': self.assertFalse,
+            "staff_problem_edit_public": {
+                "can_see_detail": self.assertFalse,
             },
-            'staff_problem_see_organization': {
-                'can_see_detail': self.assertFalse,
+            "staff_problem_see_organization": {
+                "can_see_detail": self.assertFalse,
             },
-            'staff_submission_view_all': {
-                'can_see_detail': self.assertTrue,
+            "staff_submission_view_all": {
+                "can_see_detail": self.assertTrue,
             },
-            'normal': {
-                'can_see_detail': self.assertTrue,
+            "normal": {
+                "can_see_detail": self.assertTrue,
             },
-            'anonymous': {
-                'can_see_detail': self.assertFalse,
+            "anonymous": {
+                "can_see_detail": self.assertFalse,
             },
         }
         self._test_object_methods_with_users(self.basic_submission, data)
 
     def test_ie_submission_methods(self):
         data = {
-            'staff_problem_edit_own': {
-                'can_see_detail': self.assertFalse,
+            "staff_problem_edit_own": {
+                "can_see_detail": self.assertFalse,
             },
-            'staff_problem_edit_all': {
-                'can_see_detail': self.assertTrue,
+            "staff_problem_edit_all": {
+                "can_see_detail": self.assertTrue,
             },
-            'staff_problem_edit_public': {
-                'can_see_detail': self.assertTrue,
+            "staff_problem_edit_public": {
+                "can_see_detail": self.assertTrue,
             },
-            'staff_submission_view_all': {
-                'can_see_detail': self.assertTrue,
+            "staff_submission_view_all": {
+                "can_see_detail": self.assertTrue,
             },
-            'normal': {
-                'can_see_detail': self.assertFalse,
+            "normal": {
+                "can_see_detail": self.assertFalse,
             },
         }
         self._test_object_methods_with_users(self.ie_submission, data)

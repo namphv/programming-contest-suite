@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0171_set_default_grader_checker'),
+        ("judge", "0171_set_default_grader_checker"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='contest',
-            name='disallow_virtual',
-            field=models.BooleanField(default=False, help_text='Disallow virtual joining after contest has ended.', verbose_name='Disallow virtual joining'),
+            model_name="contest",
+            name="disallow_virtual",
+            field=models.BooleanField(
+                default=False,
+                help_text="Disallow virtual joining after contest has ended.",
+                verbose_name="Disallow virtual joining",
+            ),
         ),
     ]

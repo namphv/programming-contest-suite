@@ -4,20 +4,21 @@ from django.db.models.functions import Coalesce
 
 
 def delete_self_votes(apps, schema_editor):
-    Comment = apps.get_model('judge', 'Comment')
-    CommentVote = apps.get_model('judge', 'CommentVote')
+    Comment = apps.get_model("judge", "Comment")
+    CommentVote = apps.get_model("judge", "CommentVote")
 
-    CommentVote.objects.filter(voter=F('comment__author')).delete()
+    CommentVote.objects.filter(voter=F("comment__author")).delete()
 
-    votes = CommentVote.objects.filter(comment=OuterRef('id')).order_by().values('comment')
-    total_votes = votes.annotate(total=Sum('score')).values('total')
+    votes = (
+        CommentVote.objects.filter(comment=OuterRef("id")).order_by().values("comment")
+    )
+    total_votes = votes.annotate(total=Sum("score")).values("total")
     Comment.objects.update(score=Coalesce(Subquery(total_votes), 0))
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0175_model_blogvote'),
+        ("judge", "0175_model_blogvote"),
     ]
 
     operations = [

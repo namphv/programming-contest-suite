@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0122_allow_underscore_problemcode'),
-        ('judge', '0115_contest_scoreboard_visibility'),
+        ("judge", "0122_allow_underscore_problemcode"),
+        ("judge", "0115_contest_scoreboard_visibility"),
     ]
 
-    operations = [
-    ]
+    operations = []

@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0119_hide_problem_authors'),
-        ('judge', '0133_add_GeneralIssue_model'),
+        ("judge", "0119_hide_problem_authors"),
+        ("judge", "0133_add_GeneralIssue_model"),
     ]
 
-    operations = [
-    ]
+    operations = []

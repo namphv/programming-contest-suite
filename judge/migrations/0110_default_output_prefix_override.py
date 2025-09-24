@@ -4,15 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0109_scratch_codes'),
+        ("judge", "0109_scratch_codes"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='contestproblem',
-            name='output_prefix_override',
-            field=models.IntegerField(blank=True, default=0, null=True, verbose_name='output prefix length override'),
+            model_name="contestproblem",
+            name="output_prefix_override",
+            field=models.IntegerField(
+                blank=True,
+                default=0,
+                null=True,
+                verbose_name="output prefix length override",
+            ),
         ),
     ]

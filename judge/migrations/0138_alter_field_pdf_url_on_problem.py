@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0137_add_field_suggester_to_problem'),
+        ("judge", "0137_add_field_suggester_to_problem"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='problem',
-            name='pdf_url',
-            field=models.URLField(blank=True, help_text='URL to PDF statement. The PDF file must be embeddable (Mobile web browsersmay not support embedding). Fallback included.', verbose_name='PDF statement URL'),
+            model_name="problem",
+            name="pdf_url",
+            field=models.URLField(
+                blank=True,
+                help_text="URL to PDF statement. The PDF file must be embeddable (Mobile web browsersmay not support embedding). Fallback included.",
+                verbose_name="PDF statement URL",
+            ),
         ),
     ]

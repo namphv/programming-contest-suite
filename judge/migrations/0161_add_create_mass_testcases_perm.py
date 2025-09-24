@@ -4,14 +4,30 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0160_add_limit_perms'),
+        ("judge", "0160_add_limit_perms"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='profile',
-            options={'permissions': (('test_site', 'Shows in-progress development stuff'), ('totp', 'Edit TOTP settings'), ('can_upload_image', 'Can upload image directly to server via martor'), ('high_problem_timelimit', 'Can set high problem timelimit'), ('long_contest_duration', 'Can set long contest duration'), ('create_mass_testcases', 'Can create unlimitted number of testcases for a problem')), 'verbose_name': 'user profile', 'verbose_name_plural': 'user profiles'},
+            name="profile",
+            options={
+                "permissions": (
+                    ("test_site", "Shows in-progress development stuff"),
+                    ("totp", "Edit TOTP settings"),
+                    (
+                        "can_upload_image",
+                        "Can upload image directly to server via martor",
+                    ),
+                    ("high_problem_timelimit", "Can set high problem timelimit"),
+                    ("long_contest_duration", "Can set long contest duration"),
+                    (
+                        "create_mass_testcases",
+                        "Can create unlimitted number of testcases for a problem",
+                    ),
+                ),
+                "verbose_name": "user profile",
+                "verbose_name_plural": "user profiles",
+            },
         ),
     ]

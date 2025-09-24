@@ -8,33 +8,41 @@ from judge.utils.problems import get_result_data
 from judge.utils.raw_sql import join_sql_subquery
 from judge.views.submission import ForceContestMixin, ProblemSubmissions
 
-__all__ = ['RankedSubmissions', 'ContestRankedSubmission']
+__all__ = ["RankedSubmissions", "ContestRankedSubmission"]
 
 
 class RankedSubmissions(ProblemSubmissions):
-    tab = 'best_submissions_list'
+    tab = "best_submissions_list"
     dynamic_update = False
 
     def get_queryset(self):
         params = [self.problem.id]
         if self.in_contest:
-            contest_join = 'INNER JOIN judge_contestsubmission AS cs ON (sub.id = cs.submission_id)'
-            points = 'cs.points'
-            constraint = ' AND sub.contest_object_id = %s'
+            contest_join = "INNER JOIN judge_contestsubmission AS cs ON (sub.id = cs.submission_id)"
+            points = "cs.points"
+            constraint = " AND sub.contest_object_id = %s"
             params.append(self.contest.id)
         else:
-            contest_join = ''
-            points = 'sub.points'
-            constraint = ''
+            contest_join = ""
+            points = "sub.points"
+            constraint = ""
 
         if self.selected_languages:
-            lang_ids = Language.objects.filter(key__in=self.selected_languages).values_list('id', flat=True)
+            lang_ids = Language.objects.filter(
+                key__in=self.selected_languages
+            ).values_list("id", flat=True)
             if lang_ids:
-                constraint += f' AND sub.language_id IN ({", ".join(["%s"] * len(lang_ids))})'
+                constraint += (
+                    f" AND sub.language_id IN ({', '.join(['%s'] * len(lang_ids))})"
+                )
                 params.extend(lang_ids)
             self.selected_languages = set()
 
-        queryset = super(RankedSubmissions, self).get_queryset().filter(user__is_unlisted=False)
+        queryset = (
+            super(RankedSubmissions, self)
+            .get_queryset()
+            .filter(user__is_unlisted=False)
+        )
         join_sql_subquery(
             queryset,
             subquery="""
@@ -58,22 +66,31 @@ class RankedSubmissions(ProblemSubmissions):
                 WHERE sub.problem_id = %s {constraint}
                 GROUP BY sub.user_id
             """.format(points=points, contest_join=contest_join, constraint=constraint),
-            params=params * 3, alias='best_subs', join_fields=[('id', 'id')], related_model=Submission,
+            params=params * 3,
+            alias="best_subs",
+            join_fields=[("id", "id")],
+            related_model=Submission,
         )
 
         if self.in_contest:
-            return queryset.order_by('-contest__points', 'time')
+            return queryset.order_by("-contest__points", "time")
         else:
-            return queryset.order_by('-points', 'time')
+            return queryset.order_by("-points", "time")
 
     def get_title(self):
-        return _('Best solutions for %s') % self.problem_name
+        return _("Best solutions for %s") % self.problem_name
 
     def get_content_title(self):
-        return mark_safe(escape(_('Best solutions for %s')) % (
-            format_html('<a href="{1}">{0}</a>', self.problem_name,
-                        reverse('problem_detail', args=[self.problem.code])),
-        ))
+        return mark_safe(
+            escape(_("Best solutions for %s"))
+            % (
+                format_html(
+                    '<a href="{1}">{0}</a>',
+                    self.problem_name,
+                    reverse("problem_detail", args=[self.problem.code]),
+                ),
+            )
+        )
 
     def _get_result_data(self, queryset=None):
         if queryset is None:
@@ -84,26 +101,43 @@ class RankedSubmissions(ProblemSubmissions):
 class ContestRankedSubmission(ForceContestMixin, RankedSubmissions):
     def get_title(self):
         if self.problem.is_accessible_by(self.request.user):
-            return _('Best solutions for %(problem)s in %(contest)s') % {
-                'problem': self.problem_name, 'contest': self.contest.name,
+            return _("Best solutions for %(problem)s in %(contest)s") % {
+                "problem": self.problem_name,
+                "contest": self.contest.name,
             }
-        return _('Best solutions for problem %(number)s in %(contest)s') % {
-            'number': self.get_problem_number(self.problem), 'contest': self.contest.name,
+        return _("Best solutions for problem %(number)s in %(contest)s") % {
+            "number": self.get_problem_number(self.problem),
+            "contest": self.contest.name,
         }
 
     def get_content_title(self):
         if self.problem.is_accessible_by(self.request.user):
-            return mark_safe(escape(_('Best solutions for %(problem)s in %(contest)s')) % {
-                'problem': format_html('<a href="{1}">{0}</a>', self.problem_name,
-                                       reverse('problem_detail', args=[self.problem.code])),
-                'contest': format_html('<a href="{1}">{0}</a>', self.contest.name,
-                                       reverse('contest_view', args=[self.contest.key])),
-            })
-        return mark_safe(escape(_('Best solutions for problem %(number)s in %(contest)s')) % {
-            'number': self.get_problem_number(self.problem),
-            'contest': format_html('<a href="{1}">{0}</a>', self.contest.name,
-                                   reverse('contest_view', args=[self.contest.key])),
-        })
+            return mark_safe(
+                escape(_("Best solutions for %(problem)s in %(contest)s"))
+                % {
+                    "problem": format_html(
+                        '<a href="{1}">{0}</a>',
+                        self.problem_name,
+                        reverse("problem_detail", args=[self.problem.code]),
+                    ),
+                    "contest": format_html(
+                        '<a href="{1}">{0}</a>',
+                        self.contest.name,
+                        reverse("contest_view", args=[self.contest.key]),
+                    ),
+                }
+            )
+        return mark_safe(
+            escape(_("Best solutions for problem %(number)s in %(contest)s"))
+            % {
+                "number": self.get_problem_number(self.problem),
+                "contest": format_html(
+                    '<a href="{1}">{0}</a>',
+                    self.contest.name,
+                    reverse("contest_view", args=[self.contest.key]),
+                ),
+            }
+        )
 
     def _get_queryset(self):
         return super()._get_queryset().filter(contest_object=self.contest)

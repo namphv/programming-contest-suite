@@ -4,30 +4,44 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0163_add_ban_reason'),
+        ("judge", "0163_add_ban_reason"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='contest',
-            name='frozen_last_minutes',
-            field=models.IntegerField(default=0, help_text='If set, the scoreboard will be frozen for the last X minutes. Only available for ICPC and VNOJ format.', verbose_name='frozen last minutes'),
+            model_name="contest",
+            name="frozen_last_minutes",
+            field=models.IntegerField(
+                default=0,
+                help_text="If set, the scoreboard will be frozen for the last X minutes. Only available for ICPC and VNOJ format.",
+                verbose_name="frozen last minutes",
+            ),
         ),
         migrations.AddField(
-            model_name='contestparticipation',
-            name='frozen_cumtime',
-            field=models.PositiveIntegerField(default=0, help_text='Frozen cumulative time in the scoreboard.', verbose_name='frozen cumulative time'),
+            model_name="contestparticipation",
+            name="frozen_cumtime",
+            field=models.PositiveIntegerField(
+                default=0,
+                help_text="Frozen cumulative time in the scoreboard.",
+                verbose_name="frozen cumulative time",
+            ),
         ),
         migrations.AddField(
-            model_name='contestparticipation',
-            name='frozen_score',
-            field=models.FloatField(db_index=True, default=0, help_text='Frozen score in the scoreboard.', verbose_name='frozen score'),
+            model_name="contestparticipation",
+            name="frozen_score",
+            field=models.FloatField(
+                db_index=True,
+                default=0,
+                help_text="Frozen score in the scoreboard.",
+                verbose_name="frozen score",
+            ),
         ),
         migrations.AddField(
-            model_name='contestparticipation',
-            name='frozen_tiebreaker',
-            field=models.FloatField(default=0.0, verbose_name='frozen tie-breaking field'),
+            model_name="contestparticipation",
+            name="frozen_tiebreaker",
+            field=models.FloatField(
+                default=0.0, verbose_name="frozen tie-breaking field"
+            ),
         ),
     ]

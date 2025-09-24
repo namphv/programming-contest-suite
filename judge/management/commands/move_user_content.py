@@ -5,25 +5,27 @@ from judge.models import Comment, CommentVote, ContestParticipation, Profile, Su
 
 
 class Command(BaseCommand):
-    help = 'moves comments and submissions from <source> to <target>'
+    help = "moves comments and submissions from <source> to <target>"
 
     def add_arguments(self, parser):
-        parser.add_argument('source', help='user to copy from')
-        parser.add_argument('target', help='user to copy to')
+        parser.add_argument("source", help="user to copy from")
+        parser.add_argument("target", help="user to copy to")
 
     def handle(self, *args, **options):
         try:
-            source = Profile.objects.get(user__username=options['source'])
+            source = Profile.objects.get(user__username=options["source"])
         except Profile.DoesNotExist:
-            raise CommandError(f'Invalid source user: {options["source"]}')
+            raise CommandError(f"Invalid source user: {options['source']}")
 
         try:
-            target = Profile.objects.get(user__username=options['target'])
+            target = Profile.objects.get(user__username=options["target"])
         except Profile.DoesNotExist:
-            raise CommandError(f'Invalid target user: {options["target"]}')
+            raise CommandError(f"Invalid target user: {options['target']}")
 
         if ContestParticipation.objects.filter(user=source).exists():
-            raise CommandError(f'Cannot move user {options["source"]} because it has contest participations.')
+            raise CommandError(
+                f"Cannot move user {options['source']} because it has contest participations."
+            )
 
         with transaction.atomic():
             Submission.objects.filter(user=source).update(user=target)

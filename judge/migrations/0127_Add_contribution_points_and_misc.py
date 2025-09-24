@@ -6,20 +6,23 @@ import judge.models.problem
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0126_allow_blank_desscription'),
+        ("judge", "0126_allow_blank_desscription"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='contribution_points',
+            model_name="profile",
+            name="contribution_points",
             field=models.IntegerField(db_index=True, default=0),
         ),
         migrations.AlterField(
-            model_name='problem',
-            name='description',
-            field=models.TextField(blank=True, validators=[judge.models.problem.disallowed_characters_validator], verbose_name='problem body'),
+            model_name="problem",
+            name="description",
+            field=models.TextField(
+                blank=True,
+                validators=[judge.models.problem.disallowed_characters_validator],
+                verbose_name="problem body",
+            ),
         ),
     ]

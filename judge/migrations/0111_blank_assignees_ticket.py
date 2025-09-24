@@ -4,15 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('judge', '0110_default_output_prefix_override'),
+        ("judge", "0110_default_output_prefix_override"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='ticket',
-            name='assignees',
-            field=models.ManyToManyField(blank=True, related_name='assigned_tickets', to='judge.Profile', verbose_name='assignees'),
+            model_name="ticket",
+            name="assignees",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="assigned_tickets",
+                to="judge.Profile",
+                verbose_name="assignees",
+            ),
         ),
     ]
