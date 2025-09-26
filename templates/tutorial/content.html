@@ -31,6 +31,11 @@
             padding: 20px;
         }
         
+        /* Remove padding for video section to make it fit tightly */
+        .tutorial-section-content.video-section {
+            padding: 0;
+        }
+        
         .code-actions, .slide-actions {
             margin-top: 15px;
             text-align: center;
@@ -175,9 +180,6 @@
             overflow: hidden;
             max-width: 900px;
             margin: 0 auto;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .video-container iframe {
@@ -186,9 +188,6 @@
             left: 0 !important;
             width: 100% !important;
             height: 100% !important;
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
 
         /* Mobile responsiveness */
@@ -318,23 +317,17 @@
         
         <!-- YouTube Video Section -->
         {% if tutorial.youtube_url %}
-            <div class="tutorial-section">
-                <h3 class="tutorial-section-title">
-                    <i class="fa fa-youtube-play"></i> {{ _('Tutorial Video') }}
-                </h3>
-                <div class="tutorial-section-content">
-                    <!-- YouTube video container with responsive aspect ratio -->
-                    <div class="video-container">
-                        <iframe id="youtube-iframe"
-                                src="{{ tutorial.youtube_url }}"
-                                frameborder="0"
-                                allowfullscreen
-                                loading="lazy"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                title="Tutorial YouTube Video">
-                        </iframe>
-                    </div>
-                </div>
+            <!-- Clean video container like slides -->
+            <div class="video-container" style="position: relative; padding-bottom: 45%; height: 0; overflow: hidden; max-width: 900px; margin: 30px auto; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <iframe id="youtube-iframe"
+                        src="{{ tutorial.youtube_url }}"
+                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 8px;"
+                        frameborder="0"
+                        allowfullscreen
+                        loading="lazy"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        title="Tutorial YouTube Video">
+                </iframe>
             </div>
         {% endif %}
 
