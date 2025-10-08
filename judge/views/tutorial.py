@@ -246,6 +246,9 @@ class TutorialEdit(TutorialMixin, TitleMixin, UpdateView):
             revisions.set_user(self.request.user)
             return super(TutorialEdit, self).form_valid(form)
 
+    def get_success_url(self):
+        return self.object.get_absolute_url()
+
     def dispatch(self, request, *args, **kwargs):
         if request.official_contest_mode and not request.user.is_superuser:
             return generic_message(
