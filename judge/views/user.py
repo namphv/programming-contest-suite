@@ -17,6 +17,9 @@ from django.contrib.auth.views import (
     PasswordResetView,
     redirect_to_login,
 )
+from django.contrib import messages
+from django.utils.timezone import now
+import secrets
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import (
@@ -227,6 +230,98 @@ class CustomLoginView(LoginView):
             self.request.session["password_pwned"] = True
         else:
             self.request.session["password_pwned"] = False
+
+        # Handle device fingerprinting (skip for admin users or if globally disabled)
+        device_fingerprint = self.request.POST.get('device_fingerprint', '')
+        user = form.get_user()
+
+        # Check if device fingerprinting is enabled via admin settings
+        try:
+            from judge.models import MiscConfig
+            config = MiscConfig.objects.get(key='DEVICE_FINGERPRINTING_ENABLED')
+            fingerprinting_enabled = config.value.lower() == 'true'
+        except:
+            # Default to enabled if not configured
+            fingerprinting_enabled = True
+
+        if not fingerprinting_enabled:
+            return super().form_valid(form)
+
+        # Skip device fingerprinting for staff and superusers
+        if user.is_staff or user.is_superuser:
+            messages.info(self.request, _('Admin login: Device security bypassed.'))
+            return super().form_valid(form)
+
+        if device_fingerprint:
+            profile = user.profile
+  
+            # First login - register device
+            if not profile.device_fingerprint:
+                # Add success message for first registration
+                messages.success(self.request, _('Device security enabled! This device has been registered for your account.'))
+                profile.device_fingerprint = device_fingerprint
+                profile.device_id = secrets.token_hex(32)  # Generate 64-char hex string
+                profile.device_registered_at = now()
+                profile.save(update_fields=['device_fingerprint', 'device_id', 'device_registered_at'])
+
+                # Set device ID cookie
+                response = super().form_valid(form)
+                response.set_cookie(
+                    'device_id',
+                    profile.device_id,
+                    max_age=60*60*24*365,  # 1 year
+                    secure=self.request.is_secure(),
+                    httponly=True,
+                    samesite='Lax'
+                )
+                # Silent device registration - no user message needed
+                return response
+
+            # Subsequent logins - verify device
+            elif profile.device_fingerprint != device_fingerprint:
+                # DEBUG: Log the mismatch for testing
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f'DEVICE MISMATCH - User: {user.username}, Stored: {profile.device_fingerprint[:20]}..., Current: {device_fingerprint[:20]}...')
+
+                # Clear any existing messages to prevent duplicates
+                storage = messages.get_messages(self.request)
+                for message in storage:
+                    pass  # This consumes the messages
+
+                # Fingerprint mismatch - security threat
+                messages.error(
+                    self.request, 
+                    _('🔒 Security Alert: Login denied from unrecognized device. '
+                      'This login attempt has been blocked for your account security. '
+                      'If this is your device, please contact the administrator.')
+                )
+                # Add additional warning message
+                messages.warning(
+                    self.request,
+                    _('💡 Tip: Device security is active on this account. '
+                      'You can only login from your registered device/browser.')
+                )
+                auth_logout(self.request)
+                return self.form_invalid(form)
+            else:
+                # Fingerprint matches - proceed normally with success message
+                messages.success(self.request, _('✓ Device verified successfully. Welcome back!'))
+                response = super().form_valid(form)
+                # Refresh device ID cookie
+                response.set_cookie(
+                    'device_id', 
+                    profile.device_id,
+                    max_age=60*60*24*365,  # 1 year
+                    secure=self.request.is_secure(),
+                    httponly=True,
+                    samesite='Lax'
+                )
+                return response
+        else:
+            # No fingerprint provided - allow silently (legacy browser or JS disabled)
+            return super().form_valid(form)
+        
         return super().form_valid(form)
 
 

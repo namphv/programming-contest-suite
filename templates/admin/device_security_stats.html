@@ -1,0 +1,117 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static admin_urls %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block content %}
+<div class="module">
+    <h2>{{ title }}</h2>
+    
+    <!-- System Status -->
+    <div class="module" style="margin-bottom: 20px;">
+        <h3>🔧 System Configuration</h3>
+        <table>
+            <tr>
+                <td><strong>Device Fingerprinting:</strong></td>
+                <td>
+                    {% if stats.fingerprinting_enabled %}
+                        <span style="color: green; font-weight: bold;">✓ ENABLED</span>
+                    {% else %}
+                        <span style="color: red; font-weight: bold;">✗ DISABLED</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Enforce Mode:</strong></td>
+                <td>
+                    {% if stats.enforce_mode %}
+                        <span style="color: orange; font-weight: bold;">🔒 STRICT (Block unrecognized devices)</span>
+                    {% else %}
+                        <span style="color: blue;">📝 LOG ONLY (Allow but log violations)</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+    
+    <!-- User Statistics -->
+    <div class="module" style="margin-bottom: 20px;">
+        <h3>👥 User Security Statistics</h3>
+        <table>
+            <tr>
+                <td><strong>Total Regular Users:</strong></td>
+                <td><strong>{{ stats.total_users }}</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Users with Device Security:</strong></td>
+                <td>
+                    <span style="color: green; font-weight: bold;">{{ stats.secured_users }}</span>
+                    ({{ stats.security_coverage|floatformat:1 }}%)
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Users without Device Security:</strong></td>
+                <td>
+                    <span style="color: orange;">{{ stats.unsecured_users }}</span>
+                    ({{ stats.total_users|add:0|sub:stats.secured_users|div:stats.total_users|mul:100|floatformat:1 }}%)
+                </td>
+            </tr>
+        </table>
+    </div>
+    
+    <!-- Security Coverage Chart -->
+    <div class="module" style="margin-bottom: 20px;">
+        <h3>📊 Security Coverage</h3>
+        <div style="width: 100%; background: #f0f0f0; border-radius: 10px; height: 30px; margin: 10px 0;">
+            <div style="width: {{ stats.security_coverage }}%; background: linear-gradient(to right, #4CAF50, #8BC34A); height: 100%; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                {{ stats.security_coverage|floatformat:1 }}% Secured
+            </div>
+        </div>
+        <p style="font-size: 0.9em; color: #666;">
+            {% if stats.security_coverage >= 80 %}
+                <span style="color: green;">✓ Excellent security coverage!</span>
+            {% elif stats.security_coverage >= 60 %}
+                <span style="color: orange;">⚠ Good security coverage, consider encouraging more users to register devices.</span>
+            {% else %}
+                <span style="color: red;">⚠ Low security coverage. Most users haven't registered devices yet.</span>
+            {% endif %}
+        </p>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="module">
+        <h3>⚡ Quick Actions</h3>
+        <div style="margin: 15px 0;">
+            <a href="{% url 'admin:judge_profile_changelist' %}" class="button" style="margin-right: 10px;">
+                👥 Manage All Users
+            </a>
+            <a href="{% url 'admin:judge_profile_changelist' %}?device_fingerprint__exact=1" class="button" style="margin-right: 10px;">
+                🔒 View Secured Users Only
+            </a>
+            <a href="{% url 'admin:judge_profile_changelist' %}?device_fingerprint__isnull=True" class="button" style="margin-right: 10px;">
+                ⚠ View Unsecured Users Only
+            </a>
+        </div>
+        
+        {% if not stats.fingerprinting_enabled %}
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin-top: 15px;">
+            <strong>⚠ Notice:</strong> Device fingerprinting is currently <strong>DISABLED</strong>. 
+            To enable it, set <code>DEVICE_FINGERPRINTING_ENABLED = True</code> in your Django settings.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Auto-refresh every 30 seconds
+setTimeout(function() {
+    window.location.reload();
+}, 30000);
+</script>
+{% endblock %}

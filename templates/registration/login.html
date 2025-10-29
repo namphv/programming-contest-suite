@@ -23,11 +23,122 @@
         .github-icon i {
             color: black;
         }
+        
+        /* Device Security Alert Styles */
+        .device-alert {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: 1px solid;
+        }
+        .device-alert-error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .device-alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        .device-alert-success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .device-alert-info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        
     </style>
+    
+    <!-- ThumbmarkJS Integration -->
+    <script>
+        let deviceFingerprint = null;
+        let fingerprintReady = false;
+        
+        // Initialize ThumbmarkJS silently
+        function initializeFingerprinting() {
+            // Load ThumbmarkJS from CDN and generate fingerprint silently
+            import('https://cdn.jsdelivr.net/npm/@thumbmarkjs/thumbmarkjs/dist/thumbmark.umd.js')
+                .then(() => {
+                    const thumbmark = new ThumbmarkJS.Thumbmark();
+                    return thumbmark.get();
+                })
+                .then((result) => {
+                    // Extract the actual fingerprint string from the result object
+                    deviceFingerprint = result.thumbmark || result.fingerprint || JSON.stringify(result);
+                    fingerprintReady = true;
+                    // Silent success - no user feedback needed
+                })
+                .catch((error) => {
+                    console.error('Fingerprinting failed (silent):', error);
+                    // Silent failure - allow login to proceed normally
+                    deviceFingerprint = null;
+                });
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Start fingerprinting silently in background
+            initializeFingerprinting();
+            
+            // Handle form submission
+            const loginForm = document.querySelector('form');
+            loginForm.addEventListener('submit', function(e) {
+                // Add fingerprint to form data if available
+                if (deviceFingerprint) {
+                    let fingerprintField = document.querySelector('input[name="device_fingerprint"]');
+                    if (!fingerprintField) {
+                        fingerprintField = document.createElement('input');
+                        fingerprintField.type = 'hidden';
+                        fingerprintField.name = 'device_fingerprint';
+                        this.appendChild(fingerprintField);
+                    }
+                    fingerprintField.value = deviceFingerprint;
+                    
+                    // Show brief submission indicator
+                    const indicator = document.createElement('div');
+                    indicator.style.cssText = 'position: fixed; top: 10px; right: 10px; background: green; color: white; padding: 5px; z-index: 9999; border-radius: 3px;';
+                    indicator.textContent = '✓ Device verified';
+                    document.body.appendChild(indicator);
+                    setTimeout(() => document.body.removeChild(indicator), 2000);
+                }
+                // Allow form submission regardless of fingerprint status
+            });
+        });
+    </script>
 {% endblock %}
 
 {% block body %}
     <div class="auth-flow-form">
+        <!-- Device Security Messages -->
+        {% if messages %}
+            <div id="device-messages" style="margin-bottom: 20px;">
+                {% for message in messages %}
+                    {% if message.tags == 'error' %}
+                        <div class="device-alert device-alert-error">
+                            <strong>{{ message }}</strong>
+                        </div>
+                    {% elif message.tags == 'warning' %}
+                        <div class="device-alert device-alert-warning">
+                            <strong>{{ message }}</strong>
+                        </div>
+                    {% elif message.tags == 'success' %}
+                        <div class="device-alert device-alert-success">
+                            <strong>{{ message }}</strong>
+                        </div>
+                    {% else %}
+                        <div class="device-alert device-alert-info">
+                            <strong>{{ message }}</strong>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+        
         <form action="" method="post" class="form-area">
             {% csrf_token %}
             {% if form.errors %}

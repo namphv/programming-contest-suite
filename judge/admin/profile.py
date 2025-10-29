@@ -96,12 +96,16 @@ class ProfileAdmin(NoBatchDeleteMixin, VersionAdmin):
         "is_totp_enabled",
         "user_script",
         "current_contest",
+        "device_fingerprint",
+        "device_id",
+        "device_registered_at",
     )
     readonly_fields = ("user",)
     list_display = (
         "admin_user_admin",
         "email",
         "is_totp_enabled",
+        "device_registered_status",
         "timezone_full",
         "date_joined",
         "last_access",
@@ -111,7 +115,7 @@ class ProfileAdmin(NoBatchDeleteMixin, VersionAdmin):
     ordering = ("user__username",)
     search_fields = ("user__username", "ip", "user__email")
     list_filter = ("language", TimezoneFilter)
-    actions = ("recalculate_points", "recalulate_contribution_points")
+    actions = ("recalculate_points", "recalulate_contribution_points", "reset_device_security", "bulk_reset_device_security")
     actions_on_top = True
     actions_on_bottom = True
     form = ProfileForm
@@ -203,6 +207,58 @@ class ProfileAdmin(NoBatchDeleteMixin, VersionAdmin):
     recalulate_contribution_points.short_description = _(
         "Recalulate contribution points"
     )
+
+    def device_registered_status(self, obj):
+        if obj.device_fingerprint:
+            return format_html(
+                '<span style="color: green;">✓ {}</span>',
+                obj.device_registered_at.strftime('%Y-%m-%d') if obj.device_registered_at else 'Registered'
+            )
+        else:
+            return format_html('<span style="color: red;">✗ Not registered</span>')
+
+    device_registered_status.short_description = _('Device Status')
+
+    def reset_device_security(self, request, queryset):
+        """Reset device security for selected users"""
+        count = 0
+        for profile in queryset:
+            if profile.device_fingerprint:  # Only reset if device was registered
+                profile.device_fingerprint = None
+                profile.device_id = None
+                profile.device_registered_at = None
+                profile.save(update_fields=['device_fingerprint', 'device_id', 'device_registered_at'])
+                count += 1
+
+        self.message_user(
+            request,
+            ngettext(
+                "%d user had device security reset.",
+                "%d users had device security reset.",
+                count,
+            ) % count,
+        )
+
+    reset_device_security.short_description = _("Reset device security for selected users")
+
+    def bulk_reset_device_security(self, request, queryset):
+        """Bulk reset device security for all selected users (including those without devices)"""
+        updated = queryset.update(
+            device_fingerprint=None,
+            device_id=None,
+            device_registered_at=None
+        )
+
+        self.message_user(
+            request,
+            ngettext(
+                "%d user had device security reset (bulk operation).",
+                "%d users had device security reset (bulk operation).",
+                updated,
+            ) % updated,
+        )
+
+    bulk_reset_device_security.short_description = _("Bulk reset device security (force)")
 
     def get_form(self, request, obj=None, **kwargs):
         form = super(ProfileAdmin, self).get_form(request, obj, **kwargs)

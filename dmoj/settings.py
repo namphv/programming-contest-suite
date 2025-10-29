@@ -411,6 +411,7 @@ MIDDLEWARE = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'judge.middleware.MiscConfigMiddleware',
     'judge.middleware.DMOJLoginMiddleware',
+    'judge.middleware.device_security.DeviceSecurityMiddleware',  # Device fingerprint security
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'judge.user_log.LogUserAccessMiddleware',
@@ -722,6 +723,10 @@ WEBAUTHN_RP_ID = None
 DESCRIPTION_MAX_LENGTH = 200
 
 GROUP_PERMISSION_FOR_ORG_ADMIN = 'Org Admin'
+
+# Device Fingerprinting Security Settings
+DEVICE_FINGERPRINTING_ENABLED = False  # Global enable/disable for device fingerprinting (default: disabled for safety)
+DEVICE_FINGERPRINTING_ENFORCE_MODE = True  # True = block unrecognized devices, False = log only
 
 try:
     with open(os.path.join(os.path.dirname(__file__), 'local_settings.py')) as f:

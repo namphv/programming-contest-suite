@@ -15,6 +15,7 @@ from judge.admin.interface import (
 from judge.admin.organization import OrganizationAdmin, OrganizationRequestAdmin
 from judge.admin.problem import ProblemAdmin
 from judge.admin.profile import ProfileAdmin
+from judge.admin.device_security import DeviceSecurityAdmin
 from judge.admin.runtime import JudgeAdmin, LanguageAdmin
 from judge.admin.submission import SubmissionAdmin
 from judge.admin.tag import TagAdmin, TagGroupAdmin, TagProblemAdmin
@@ -69,6 +70,16 @@ admin.site.register(Problem, ProblemAdmin)
 admin.site.register(ProblemGroup, ProblemGroupAdmin)
 admin.site.register(ProblemType, ProblemTypeAdmin)
 admin.site.register(Profile, ProfileAdmin)
+
+# Register Device Security as a separate admin interface
+class DeviceSecurityProxy(Profile):
+    """Proxy model for device security management"""
+    class Meta:
+        proxy = True
+        verbose_name = "Device Security"
+        verbose_name_plural = "Device Security Management"
+
+admin.site.register(DeviceSecurityProxy, DeviceSecurityAdmin)
 admin.site.register(Submission, SubmissionAdmin)
 admin.site.register(Ticket, TicketAdmin)
 admin.site.register(Tag, TagAdmin)

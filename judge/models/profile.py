@@ -342,6 +342,28 @@ class Profile(models.Model):
         default=dict, help_text=_("pre-calculate total points on each organization")
     )
 
+    # Device fingerprinting fields for security
+    device_fingerprint = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name=_("device fingerprint"),
+        help_text=_("Unique browser/device fingerprint for security"),
+    )
+    device_id = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        verbose_name=_("device ID"),
+        help_text=_("Persistent device identifier cookie"),
+    )
+    device_registered_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("device registration time"),
+        help_text=_("When the current device was first registered"),
+    )
+
     @cached_property
     def organization(self):
         # We do this to take advantage of prefetch_related
