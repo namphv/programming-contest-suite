@@ -53,6 +53,17 @@ class DeviceSecurityAdmin(admin.ModelAdmin):
     search_fields = ['user__username', 'user__email', 'device_id']
     actions = ['reset_selected_devices', 'bulk_reset_all_devices']
     
+    def get_actions(self, request):
+        """Remove default delete action"""
+        actions = super().get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
+    
+    def has_delete_permission(self, request, obj=None):
+        """Disable delete permission for device security management"""
+        return False
+    
     def get_changelist(self, request, **kwargs):
         return DeviceSecurityChangeList
     

@@ -102,7 +102,7 @@
                     // Show brief submission indicator
                     const indicator = document.createElement('div');
                     indicator.style.cssText = 'position: fixed; top: 10px; right: 10px; background: green; color: white; padding: 5px; z-index: 9999; border-radius: 3px;';
-                    indicator.textContent = '✓ Device verified';
+                    indicator.textContent = '✓ {{ _("Device verified")|escapejs }}';
                     document.body.appendChild(indicator);
                     setTimeout(() => document.body.removeChild(indicator), 2000);
                 }
