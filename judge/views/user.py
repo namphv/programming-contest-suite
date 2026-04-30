@@ -254,17 +254,15 @@ class CustomLoginView(LoginView):
 
         if device_fingerprint:
             profile = user.profile
-  
+
             # First login - register device
             if not profile.device_fingerprint:
-                # Add success message for first registration
                 messages.success(self.request, _('Device security enabled! This device has been registered for your account.'))
                 profile.device_fingerprint = device_fingerprint
-                profile.device_id = secrets.token_hex(32)  # Generate 64-char hex string
+                profile.device_id = secrets.token_hex(32)
                 profile.device_registered_at = now()
                 profile.save(update_fields=['device_fingerprint', 'device_id', 'device_registered_at'])
 
-                # Set device ID cookie
                 response = super().form_valid(form)
                 response.set_cookie(
                     'device_id',
@@ -274,43 +272,27 @@ class CustomLoginView(LoginView):
                     httponly=True,
                     samesite='Lax'
                 )
-                # Silent device registration - no user message needed
                 return response
 
             # Subsequent logins - verify device
-            elif profile.device_fingerprint != device_fingerprint:
-                # DEBUG: Log the mismatch for testing
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f'DEVICE MISMATCH - User: {user.username}, Stored: {profile.device_fingerprint[:20]}..., Current: {device_fingerprint[:20]}...')
+            # 1. Check device_id cookie first (stable identifier)
+            device_id_cookie = self.request.COOKIES.get('device_id')
+            device_verified_by_cookie = (device_id_cookie and device_id_cookie == profile.device_id)
 
-                # Clear any existing messages to prevent duplicates
-                storage = messages.get_messages(self.request)
-                for message in storage:
-                    pass  # This consumes the messages
+            if device_verified_by_cookie:
+                # Cookie matches - device is trusted
+                # Update stored fingerprint if it drifted (browser update, etc.)
+                if profile.device_fingerprint != device_fingerprint:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.info(f'DEVICE FINGERPRINT DRIFT - User: {user.username}, updating stored fingerprint')
+                    profile.device_fingerprint = device_fingerprint
+                    profile.save(update_fields=['device_fingerprint'])
 
-                # Fingerprint mismatch - security threat
-                messages.error(
-                    self.request, 
-                    _('🔒 Security Alert: Login denied from unrecognized device. '
-                      'This login attempt has been blocked for your account security. '
-                      'If this is your device, please contact the administrator.')
-                )
-                # Add additional warning message
-                messages.warning(
-                    self.request,
-                    _('💡 Tip: Device security is active on this account. '
-                      'You can only login from your registered device/browser.')
-                )
-                auth_logout(self.request)
-                return self.form_invalid(form)
-            else:
-                # Fingerprint matches - proceed normally with success message
-                messages.success(self.request, _('✓ Device verified successfully. Welcome back!'))
+                messages.success(self.request, _('Device verified successfully. Welcome back!'))
                 response = super().form_valid(form)
-                # Refresh device ID cookie
                 response.set_cookie(
-                    'device_id', 
+                    'device_id',
                     profile.device_id,
                     max_age=60*60*24*365,  # 1 year
                     secure=self.request.is_secure(),
@@ -318,11 +300,51 @@ class CustomLoginView(LoginView):
                     samesite='Lax'
                 )
                 return response
+
+            # 2. No cookie - fall back to fingerprint comparison
+            elif profile.device_fingerprint == device_fingerprint:
+                # Fingerprint matches - re-issue cookie (may have been cleared)
+                messages.success(self.request, _('Device verified successfully. Welcome back!'))
+                response = super().form_valid(form)
+                response.set_cookie(
+                    'device_id',
+                    profile.device_id,
+                    max_age=60*60*24*365,  # 1 year
+                    secure=self.request.is_secure(),
+                    httponly=True,
+                    samesite='Lax'
+                )
+                return response
+
+            else:
+                # Neither cookie nor fingerprint match - block login
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f'DEVICE MISMATCH - User: {user.username}, '
+                             f'Stored FP: {profile.device_fingerprint[:20]}..., '
+                             f'Current FP: {device_fingerprint[:20]}..., '
+                             f'Cookie present: {bool(device_id_cookie)}')
+
+                storage = messages.get_messages(self.request)
+                for message in storage:
+                    pass
+
+                messages.error(
+                    self.request,
+                    _('Security Alert: Login denied from unrecognized device. '
+                      'This login attempt has been blocked for your account security. '
+                      'If this is your device, please contact the administrator.')
+                )
+                messages.warning(
+                    self.request,
+                    _('Tip: Device security is active on this account. '
+                      'You can only login from your registered device/browser.')
+                )
+                auth_logout(self.request)
+                return self.form_invalid(form)
         else:
             # No fingerprint provided - allow silently (legacy browser or JS disabled)
             return super().form_valid(form)
-        
-        return super().form_valid(form)
 
 
 class CustomPasswordChangeView(PasswordChangeView):
