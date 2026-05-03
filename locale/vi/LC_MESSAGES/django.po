@@ -1124,9 +1124,9 @@ msgstr ""
 msgid "N j, Y, g:i a"
 msgstr "j, M, Y, G:i"
 
-#: judge/middleware/device_security.py:46
-msgid "Session terminated: Device verification failed."
-msgstr "Phiên làm việc đã kết thúc: Xác minh thiết bị thất bại."
+#: judge/middleware/device_security.py:46 judge/views/user.py
+msgid "Account only allows login from 1 device. Contact: 0395 971 275"
+msgstr "Tài khoản chỉ cho phép đăng nhập trên 1 thiết bị. Liên hệ: 0395 971 275"
 
 #: judge/models/choices.py:24
 msgid "Follow site theme"
@@ -4841,26 +4841,12 @@ msgid "Admin login: Device security bypassed."
 msgstr ""
 
 #: judge/views/user.py:261
-msgid ""
-"Device security enabled! This device has been registered for your account."
-msgstr "Bảo mật thiết bị đã được bật! Thiết bị này đã được đăng ký cho tài khoản của bạn."
+msgid "This device has been registered for your account."
+msgstr "Thiết bị này đã được đăng ký cho tài khoản của bạn."
 
 #: judge/views/user.py:295
-msgid ""
-"🔒 Security Alert: Login denied from unrecognized device. This login attempt "
-"has been blocked for your account security. If this is your device, please "
-"contact the administrator."
-msgstr "🔒 Cảnh báo bảo mật: Đăng nhập bị từ chối từ thiết bị không được nhận diện. Lần đăng nhập này đã bị chặn vì lý do bảo mật tài khoản. Nếu đây là thiết bị của bạn, vui lòng liên hệ quản trị viên."
-
-#: judge/views/user.py:302
-msgid ""
-"💡 Tip: Device security is active on this account. You can only login from "
-"your registered device/browser."
-msgstr "💡 Mẹo: Bảo mật thiết bị đang được kích hoạt trên tài khoản này. Bạn chỉ có thể đăng nhập từ thiết bị/trình duyệt đã đăng ký."
-
-#: judge/views/user.py:309
-msgid "✓ Device verified successfully. Welcome back!"
-msgstr "✓ Thiết bị đã xác minh thành công. Chào mừng trở lại!"
+msgid "Device verified successfully. Welcome back!"
+msgstr "Thiết bị đã xác minh thành công. Chào mừng trở lại!"
 
 #: judge/views/user.py:366
 msgid "M j, Y, G:i"
@@ -7212,10 +7198,8 @@ msgid "Activate your %(SITE_NAME)s account)"
 msgstr "Kích hoạt tài khoản %(SITE_NAME)s"
 
 #: templates/registration/login.html:105
-#, fuzzy
-#| msgid "Device Registered"
 msgid "Device verified"
-msgstr "Đăng ký"
+msgstr "Đã xác minh thiết bị"
 
 #: templates/registration/login.html:146
 msgid "Invalid username or password."

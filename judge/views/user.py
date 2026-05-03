@@ -257,7 +257,7 @@ class CustomLoginView(LoginView):
 
             # First login - register device
             if not profile.device_fingerprint:
-                messages.success(self.request, _('Device security enabled! This device has been registered for your account.'))
+                messages.success(self.request, _('This device has been registered for your account.'))
                 profile.device_fingerprint = device_fingerprint
                 profile.device_id = secrets.token_hex(32)
                 profile.device_registered_at = now()
@@ -331,14 +331,7 @@ class CustomLoginView(LoginView):
 
                 messages.error(
                     self.request,
-                    _('Security Alert: Login denied from unrecognized device. '
-                      'This login attempt has been blocked for your account security. '
-                      'If this is your device, please contact the administrator.')
-                )
-                messages.warning(
-                    self.request,
-                    _('Tip: Device security is active on this account. '
-                      'You can only login from your registered device/browser.')
+                    _('Account only allows login from 1 device. Contact: 0395 971 275')
                 )
                 auth_logout(self.request)
                 return self.form_invalid(form)

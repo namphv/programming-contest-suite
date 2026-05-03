@@ -43,7 +43,7 @@ class DeviceSecurityMiddleware:
                 if not self._validate_device_security(request):
                     # Device validation failed - logout and redirect
                     logout(request)
-                    messages.error(request, _('Session terminated: Device verification failed.'))
+                    messages.error(request, _('Account only allows login from 1 device. Contact: 0395 971 275'))
                     return redirect('auth_login')
         
         response = self.get_response(request)
