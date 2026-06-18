@@ -47,16 +47,36 @@
                 });
             {% endif %}
 
-            // var tooltip_classes = 'tooltipped tooltipped-e';
-            //
-            // $('.contest-tag').each(function () {
-            //     var link = $(this);//
-            //     link.mouseenter(function (e) {
-            //         link.addClass(tooltip_classes).attr('aria-label', link.attr('data-description'));
-            //     }).mouseleave(function (e) {
-            //         link.removeClass(tooltip_classes).removeAttr('aria-label');
-            //     });
-            // });
+            $('a[data-sort-table]').click(function (e) {
+                e.preventDefault();
+                var $link = $(this);
+                var tbodyId = $link.data('sort-table');
+                var sortKey = $link.data('sort-key');
+                var $tbody = $('#' + tbodyId);
+                var rows = $tbody.find('tr').get();
+                var asc = $link.data('sort-asc');
+
+                if (asc === undefined) asc = true;
+                else asc = !asc;
+
+                // Clear other sort indicators for same table
+                $('a[data-sort-table="' + tbodyId + '"]').not($link)
+                    .removeData('sort-asc')
+                    .find('.sort-indicator').text('');
+                $link.data('sort-asc', asc);
+
+                rows.sort(function (a, b) {
+                    var aVal = String($(a).data(sortKey) || '');
+                    var bVal = String($(b).data(sortKey) || '');
+                    return asc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                });
+
+                $.each(rows, function (i, row) {
+                    $tbody.append(row);
+                });
+
+                $link.find('.sort-indicator').text(asc ? ' \u25b4' : ' \u25be');
+            });
         });
     </script>
 {% endblock %}
@@ -240,25 +260,34 @@
             <table class="contest-list table striped">
                 <thead>
                 <tr>
-                    <th style="width:80%">{{ _('Contest') }}</th>
+                    <th style="width:65%">
+                        <a href="#" class="contest-sort-link" data-sort-table="ongoing-contests" data-sort-key="sort-name">
+                            {{ _('Contest') }} <span class="sort-indicator"></span>
+                        </a>
+                    </th>
+                    <th>
+                        <a href="#" class="contest-sort-link" data-sort-table="ongoing-contests" data-sort-key="sort-date">
+                            {{ _('Date') }} <span class="sort-indicator"></span>
+                        </a>
+                    </th>
                     <th>{{ _('Users') }}</th>
                     <th style="width:15%"></th>
                 </tr>
                 </thead>
-                <tbody>
+                <tbody id="ongoing-contests">
                 {% for contest in current_contests %}
-                    <tr>
+                    <tr data-sort-name="{{ contest.name|lower }}" data-sort-date="{{ contest.start_time.isoformat() }}">
                         <td>
                             <div class="contest-block">
                                 {{ contest_head(contest) }}
-                                {% if contest.start_time %}
+                                {% if contest.start_time and contest.time_before_end %}
                                     <br>
-                                    {% if contest.time_before_end %}
-                                        <span class="time">{{ _('Ends in %(countdown)s', countdown=as_countdown(contest.time_before_end)) }}</span>
-                                    {% endif %}
-                                    {{ time_left(contest) }}
+                                    <span class="time">{{ _('Ends in %(countdown)s', countdown=as_countdown(contest.time_before_end)) }}</span>
                                 {% endif %}
                             </div>
+                        </td>
+                        <td>
+                            {{ time_left(contest) }}
                         </td>
                         <td>
                             {{ user_count(contest, request.user) }}

@@ -247,9 +247,12 @@ class CustomLoginView(LoginView):
         if not fingerprinting_enabled:
             return super().form_valid(form)
 
-        # Skip device fingerprinting for staff and superusers
+        # Skip device fingerprinting for staff, superusers, or exempt users
         if user.is_staff or user.is_superuser:
             messages.info(self.request, _('Admin login: Device security bypassed.'))
+            return super().form_valid(form)
+
+        if hasattr(user, 'profile') and user.profile.device_security_exempt:
             return super().form_valid(form)
 
         if device_fingerprint:

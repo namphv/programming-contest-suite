@@ -363,6 +363,11 @@ class Profile(models.Model):
         verbose_name=_("device registration time"),
         help_text=_("When the current device was first registered"),
     )
+    device_security_exempt = models.BooleanField(
+        default=False,
+        verbose_name=_("exempt from device security"),
+        help_text=_("If enabled, this user can login from any device without restriction."),
+    )
 
     @cached_property
     def organization(self):

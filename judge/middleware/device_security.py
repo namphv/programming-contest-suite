@@ -55,7 +55,11 @@ class DeviceSecurityMiddleware:
         Returns True if valid, False if security violation detected.
         """
         profile = request.user.profile
-        
+
+        # If user is exempt from device security, allow
+        if profile.device_security_exempt:
+            return True
+
         # If no device fingerprint registered, allow (legacy users)
         if not profile.device_fingerprint:
             return True

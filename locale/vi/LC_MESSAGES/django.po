@@ -4840,6 +4840,14 @@ msgstr "Đăng nhập"
 msgid "Admin login: Device security bypassed."
 msgstr ""
 
+#: judge/models/profile.py
+msgid "exempt from device security"
+msgstr "miễn bảo mật thiết bị"
+
+#: judge/models/profile.py
+msgid "If enabled, this user can login from any device without restriction."
+msgstr "Nếu bật, người dùng này có thể đăng nhập từ bất kỳ thiết bị nào."
+
 #: judge/views/user.py:261
 msgid "This device has been registered for your account."
 msgstr "Thiết bị này đã được đăng ký cho tài khoản của bạn."

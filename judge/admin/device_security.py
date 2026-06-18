@@ -39,19 +39,22 @@ class DeviceSecurityAdmin(admin.ModelAdmin):
             return True
     list_display = [
         'username',
-        'email', 
+        'email',
         'device_security_status',
+        'device_security_exempt',
         'device_registered_date',
         'last_access',
         'device_actions'
     ]
     list_filter = [
         ('device_fingerprint', admin.EmptyFieldListFilter),
+        'device_security_exempt',
         'device_registered_at',
         'last_access'
     ]
+    list_editable = ['device_security_exempt']
     search_fields = ['user__username', 'user__email', 'device_id']
-    actions = ['reset_selected_devices', 'bulk_reset_all_devices']
+    actions = ['reset_selected_devices', 'bulk_reset_all_devices', 'exempt_selected_users', 'unexempt_selected_users']
     
     def get_actions(self, request):
         """Remove default delete action"""
@@ -152,7 +155,31 @@ class DeviceSecurityAdmin(admin.ModelAdmin):
             ) % updated,
         )
     bulk_reset_all_devices.short_description = _("Bulk reset ALL device security")
-    
+
+    def exempt_selected_users(self, request, queryset):
+        updated = queryset.update(device_security_exempt=True)
+        self.message_user(
+            request,
+            ngettext(
+                "%d user was exempted from device security.",
+                "%d users were exempted from device security.",
+                updated,
+            ) % updated,
+        )
+    exempt_selected_users.short_description = _("Exempt selected users from device security")
+
+    def unexempt_selected_users(self, request, queryset):
+        updated = queryset.update(device_security_exempt=False)
+        self.message_user(
+            request,
+            ngettext(
+                "%d user device security exemption was removed.",
+                "%d users device security exemption was removed.",
+                updated,
+            ) % updated,
+        )
+    unexempt_selected_users.short_description = _("Remove device security exemption for selected users")
+
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [

@@ -99,6 +99,7 @@ class ProfileAdmin(NoBatchDeleteMixin, VersionAdmin):
         "device_fingerprint",
         "device_id",
         "device_registered_at",
+        "device_security_exempt",
     )
     readonly_fields = ("user",)
     list_display = (
