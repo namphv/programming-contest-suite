@@ -116,7 +116,7 @@ class ProfileAdmin(NoBatchDeleteMixin, VersionAdmin):
     ordering = ("user__username",)
     search_fields = ("user__username", "ip", "user__email")
     list_filter = ("language", TimezoneFilter)
-    actions = ("recalculate_points", "recalulate_contribution_points", "reset_device_security", "bulk_reset_device_security")
+    actions = ("recalculate_points", "recalulate_contribution_points", "reset_device_security", "bulk_reset_device_security", "exempt_device_security", "unexempt_device_security")
     actions_on_top = True
     actions_on_bottom = True
     form = ProfileForm
@@ -260,6 +260,32 @@ class ProfileAdmin(NoBatchDeleteMixin, VersionAdmin):
         )
 
     bulk_reset_device_security.short_description = _("Bulk reset device security (force)")
+
+    def exempt_device_security(self, request, queryset):
+        updated = queryset.update(device_security_exempt=True)
+        self.message_user(
+            request,
+            ngettext(
+                "%d user was exempted from device security.",
+                "%d users were exempted from device security.",
+                updated,
+            ) % updated,
+        )
+
+    exempt_device_security.short_description = _("Exempt selected users from device security")
+
+    def unexempt_device_security(self, request, queryset):
+        updated = queryset.update(device_security_exempt=False)
+        self.message_user(
+            request,
+            ngettext(
+                "%d user device security exemption was removed.",
+                "%d users device security exemption was removed.",
+                updated,
+            ) % updated,
+        )
+
+    unexempt_device_security.short_description = _("Remove device security exemption for selected users")
 
     def get_form(self, request, obj=None, **kwargs):
         form = super(ProfileAdmin, self).get_form(request, obj, **kwargs)

@@ -1128,6 +1128,28 @@ msgstr "j, M, Y, G:i"
 msgid "Account only allows login from 1 device. Contact: 0395 971 275"
 msgstr "Tài khoản chỉ cho phép đăng nhập trên 1 thiết bị. Liên hệ: 0395 971 275"
 
+#: judge/admin/device_security.py judge/admin/profile.py
+msgid "Exempt selected users from device security"
+msgstr "Miễn bảo mật thiết bị cho người dùng đã chọn"
+
+#: judge/admin/device_security.py judge/admin/profile.py
+msgid "Remove device security exemption for selected users"
+msgstr "Xoá miễn bảo mật thiết bị cho người dùng đã chọn"
+
+#: judge/admin/device_security.py judge/admin/profile.py
+#, python-format
+msgid "%d user was exempted from device security."
+msgid_plural "%d users were exempted from device security."
+msgstr[0] "%d người dùng đã được miễn bảo mật thiết bị."
+msgstr[1] "%d người dùng đã được miễn bảo mật thiết bị."
+
+#: judge/admin/device_security.py judge/admin/profile.py
+#, python-format
+msgid "%d user device security exemption was removed."
+msgid_plural "%d users device security exemption was removed."
+msgstr[0] "%d người dùng đã bị xoá miễn bảo mật thiết bị."
+msgstr[1] "%d người dùng đã bị xoá miễn bảo mật thiết bị."
+
 #: judge/models/choices.py:24
 msgid "Follow site theme"
 msgstr ""
